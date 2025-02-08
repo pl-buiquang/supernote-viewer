@@ -1,0 +1,3 @@
+[submodule "supernote-typescript"]
+	path = supernote-typescript
+	url = git@github.com:pl-buiquang/supernote-typescript.git
