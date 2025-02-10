@@ -3,11 +3,13 @@ import { readFile, writeFile } from '@tauri-apps/plugin-fs';
 import { SupernoteX, toImage } from 'supernote-typescript';
 import pako from 'pako';
 
-async function main(pdfPath: string, markFile: string, outputPdfPath: string) {   
+export async function exportPdf(pdfPath: string, markFile?: string, outputPdfPath?: string) {   
+  const markFilepath = markFile || `${pdfPath}.mark`;
+  const outputFilename = outputPdfPath || `${pdfPath.replace('.pdf', '')}.marked.pdf`;
   const pdfData = await readFile(pdfPath);
   const pdfDoc = await PDFDocument.load(pdfData);
 
-  const markData = await readFile(markFile);
+  const markData = await readFile(markFilepath);
   const note = new SupernoteX(new Uint8Array(markData.buffer))
   const markedPdfPageNumbers = Object.keys(note.footer.PAGE)
 
@@ -77,6 +79,7 @@ async function main(pdfPath: string, markFile: string, outputPdfPath: string) {
 
   console.log("Saving new PDF...");
   const modifiedPdfBytes = await pdfDoc.save();
-  await writeFile(outputPdfPath, modifiedPdfBytes);
-  console.log(`New PDF saved as: ${outputPdfPath}`);
+  await writeFile(outputFilename, modifiedPdfBytes);
+  console.log(`New PDF saved as: ${outputFilename}`);
+  return outputFilename;
 }

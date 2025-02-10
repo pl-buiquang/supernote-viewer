@@ -1,16 +1,38 @@
-import { defineConfig } from "vite";
+import { defineConfig, normalizePath } from "vite";
 import path from 'path';
 import react from "@vitejs/plugin-react";
+import { createRequire } from 'node:module'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
+
+
+const require = createRequire(import.meta.url)
+const cMapsDir = normalizePath(path.join(path.dirname(require.resolve('pdfjs-dist/package.json')), 'cmaps'))
+const standardFontsDir = normalizePath(
+  path.join(path.dirname(require.resolve('pdfjs-dist/package.json')), 'standard_fonts')
+)
 
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [react()],
+  plugins: [
+    react(),
+    viteStaticCopy({
+      targets: [
+        { src: cMapsDir, dest: '' },
+        { src: standardFontsDir, dest: '' }
+      ]
+    })
+  ],
   resolve: {
     alias: {
-      'supernote-typescript': path.resolve(__dirname, 'supernote-typescript'),
+      "@": path.resolve(__dirname, "./src"),
+      'supernote-typescript': path.resolve(__dirname, 'supernote-typescript/src'),
     },
+  },
+  envPrefix: ['VITE_', 'TAURI_ENV_*'],
+  optimizeDeps: {
+    include: ["supernote-typescript"],
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
