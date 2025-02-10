@@ -1,4 +1,4 @@
-import * as React from "react"
+import * as React from 'react';
 
 import {
   Sidebar,
@@ -11,16 +11,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar"
+} from '@/components/ui/sidebar';
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button';
 import { open } from '@tauri-apps/plugin-dialog';
-  
 
 export type AppSidebarProps = {
   setBaseFolder: (folder: string) => void;
-} & React.ComponentProps<typeof Sidebar>
-
+} & React.ComponentProps<typeof Sidebar>;
 
 export function AppSidebar({ ...props }: AppSidebarProps) {
   const { setBaseFolder } = props;
@@ -31,7 +29,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
       directory: true,
     });
     setBaseFolder(file);
-  }
+  };
 
   return (
     <Sidebar {...props}>
@@ -47,15 +45,16 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
             <SidebarMenu>
               <SidebarMenuItem key="choose-folder">
                 <SidebarMenuButton asChild>
-                  <Button className="w-full" onClick={handleChooseFolder}>Choose Folder</Button>
+                  <Button className="w-full" onClick={handleChooseFolder}>
+                    Choose Folder
+                  </Button>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-    </SidebarContent>
+      </SidebarContent>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }
-

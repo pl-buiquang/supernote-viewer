@@ -1,4 +1,4 @@
-import { AppSidebar } from "./components/app-sidebar"
+import { AppSidebar } from './components/app-sidebar';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -6,21 +6,16 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-import Browser from "./app/browser"
-import { useIsMobile } from "./hooks/use-mobile"
-import "./index.css"
-import { useState } from "react"
+} from '@/components/ui/breadcrumb';
+import { Separator } from '@/components/ui/separator';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import Browser from './app/browser';
+import { useIsMobile } from './hooks/use-mobile';
+import './index.css';
+import { useState } from 'react';
 
 export default function App() {
-  useIsMobile()
-  const yolo = "yy"
+  useIsMobile();
   const [baseFolder, setBaseFolder] = useState<string | null>(null);
 
   return (
@@ -32,10 +27,8 @@ export default function App() {
           <Separator orientation="vertical" className="mr-2 h-4" />
           <Breadcrumb>
             <BreadcrumbList>
-                     <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="#">
-                  Building Your Application
-                </BreadcrumbLink>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink href="#">Building Your Application</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
@@ -49,6 +42,5 @@ export default function App() {
         </div>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }
-
