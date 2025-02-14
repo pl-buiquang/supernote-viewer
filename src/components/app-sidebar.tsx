@@ -15,20 +15,19 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { open } from '@tauri-apps/plugin-dialog';
+import { useStore } from '@/store';
 
-export type AppSidebarProps = {
-  setBaseFolder: (folder: string) => void;
-} & React.ComponentProps<typeof Sidebar>;
+export type AppSidebarProps = {} & React.ComponentProps<typeof Sidebar>;
 
 export function AppSidebar({ ...props }: AppSidebarProps) {
-  const { setBaseFolder } = props;
+  const { setStoreValue } = useStore();
   const handleChooseFolder = async () => {
     // Open a dialog
     const file = await open({
       multiple: false,
       directory: true,
     });
-    setBaseFolder(file);
+    await setStoreValue('baseFolder', file);
   };
 
   return (
