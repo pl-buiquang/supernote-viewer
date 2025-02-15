@@ -1,14 +1,19 @@
 import { PDFDict, PDFDocument, PDFName, PDFRef, PDFStream } from 'pdf-lib';
-import { readFile, writeFile } from '@tauri-apps/plugin-fs';
 import { SupernoteX, toImage } from 'supernote-typescript';
 import pako from 'pako';
+import { readFile, writeFile } from './platform';
 
-export async function exportPdf(pdfPath: string, markFile: string): Promise<Uint8Array<ArrayBufferLike>> {
-  const pdfData = await readFile(pdfPath);
+export async function exportPdf(
+  pdfPath: string,
+  markFile: string,
+  isPdfPathCached: boolean,
+  logMsg?: (msg: string) => void,
+): Promise<Uint8Array> {
+  const pdfData = await readFile(pdfPath, isPdfPathCached);
   const pdfDoc = await PDFDocument.load(pdfData);
 
   const markData = await readFile(markFile);
-  const note = new SupernoteX(new Uint8Array(markData.buffer));
+  const note = new SupernoteX(new Uint8Array(markData));
   const markedPdfPageNumbers = Object.keys(note.footer.PAGE);
 
   let previousJsonMarkInfo: Record<string, { pageNumber: string; index: number; marksCount: number }> = {};
@@ -29,7 +34,7 @@ export async function exportPdf(pdfPath: string, markFile: string): Promise<Uint
     if (markData) {
       const content = pako.inflate(markData.getContents());
       previousJsonMarkInfo = JSON.parse(new TextDecoder().decode(content));
-      console.log('Found marks.json file attachment', previousJsonMarkInfo);
+      logMsg(`Found marks.json file attachmen ${previousJsonMarkInfo}`);
     }
   }
 
@@ -56,14 +61,14 @@ export async function exportPdf(pdfPath: string, markFile: string): Promise<Uint
   const pagesToExtract = Array.from({ length: numPages }, (_, i) => i + 1).filter((page) =>
     updateOrNewPagesIndexes.includes(page - 1),
   );
-  console.log(`Extracting pages ${pagesToExtract} from the mark file...`);
+  logMsg(`Extracting pages ${pagesToExtract} from the mark file...`);
   const markImages = await toImage(note, pagesToExtract);
-  console.log(`Extracted ${pagesToExtract.length} pages from the mark file.`);
+  logMsg(`Extracted ${pagesToExtract.length} pages from the mark file.`);
 
   await Promise.all(
     markImages.map(async (image, i) => {
       const pdfPageIndex = updatedOrNewPages[i].pageNumber;
-      console.log(`Marking page ${pdfPageIndex}...`);
+      logMsg(`Marking page ${pdfPageIndex}...`);
       const pdfPage = pdfDoc.getPage(parseInt(pdfPageIndex) - 1);
       const { width, height } = pdfPage.getSize();
       const markImageBytes = image.toBuffer();
@@ -74,7 +79,7 @@ export async function exportPdf(pdfPath: string, markFile: string): Promise<Uint
         width: width,
         height: height,
       });
-      console.log(`Marked page ${pdfPageIndex}.`);
+      logMsg(`Marked page ${pdfPageIndex}.`);
     }),
   );
 
@@ -83,7 +88,7 @@ export async function exportPdf(pdfPath: string, markFile: string): Promise<Uint
       ((markObjectRef[1] as PDFDict).get(PDFName.of('EF')) as PDFDict).get(PDFName.of('F')) as PDFRef,
     );
     pdfDoc.context.delete(markObjectRef[0]);
-    console.log('Deleted previous marks.json file attachment');
+    logMsg('Deleted previous marks.json file attachment');
   }
 
   await pdfDoc.attach(new TextEncoder().encode(JSON.stringify(jsonMarkInfo)), 'marks.json', {
@@ -93,13 +98,19 @@ export async function exportPdf(pdfPath: string, markFile: string): Promise<Uint
     modificationDate: new Date(),
   });
 
-  console.log('Saving new PDF...');
+  logMsg('Saving new PDF...');
   const modifiedPdfBytes = await pdfDoc.save();
   return modifiedPdfBytes;
 }
 
-export async function exportPdfTo(pdfPath: string, markFile: string, outputPdfPath: string) {
-  const markedPdfData = await exportPdf(pdfPath, markFile);
+export async function exportPdfTo(
+  pdfPath: string,
+  markFile: string,
+  outputPdfPath: string,
+  isPdfPathCached: boolean,
+  logMsg?: (msg: string) => void,
+) {
+  const markedPdfData = await exportPdf(pdfPath, markFile, isPdfPathCached, logMsg);
   await writeFile(outputPdfPath, markedPdfData);
   return outputPdfPath;
 }

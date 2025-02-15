@@ -21,7 +21,7 @@
     "fs:read-dirs",
     {
       "identifier": "fs:scope",
-      "allow": ["**/*"]
+      "allow": ["**/*", "$APPLOCALDATA/**/*"]
     },
     "store:default"
   ]

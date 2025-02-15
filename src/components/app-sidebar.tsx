@@ -14,8 +14,8 @@ import {
 } from '@/components/ui/sidebar';
 
 import { Button } from '@/components/ui/button';
-import { open } from '@tauri-apps/plugin-dialog';
 import { useStore } from '@/store';
+import { openDir, openFile } from '@/services/platform';
 
 export type AppSidebarProps = {} & React.ComponentProps<typeof Sidebar>;
 
@@ -23,11 +23,14 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
   const { setStoreValue } = useStore();
   const handleChooseFolder = async () => {
     // Open a dialog
-    const file = await open({
-      multiple: false,
-      directory: true,
-    });
+    const file = await openDir();
     await setStoreValue('baseFolder', file);
+  };
+
+  const handleChooseFile = async () => {
+    // Open a dialog
+    const file = await openFile();
+    await setStoreValue('currentFile', file);
   };
 
   return (
@@ -40,6 +43,20 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
       <SidebarContent>
         <SidebarGroup key="main">
           <SidebarGroupLabel>Main</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem key="choose-file">
+                <SidebarMenuButton asChild>
+                  <Button className="w-full" onClick={handleChooseFile}>
+                    Open file
+                  </Button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup key="settings">
+          <SidebarGroupLabel>Settings</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem key="choose-folder">
