@@ -21,7 +21,8 @@ export const isMobile = platform() === 'android' || platform() === 'ios';
 export async function readFile(path: string, localAppData: boolean = false): Promise<ArrayBuffer> {
   console.log('Tauri: Reading file ', path);
   const options = localAppData ? { baseDir: BaseDirectory.AppLocalData } : {};
-  return (await tauriReadFile(path, options)).buffer;
+  const fileData = await tauriReadFile(path, options);
+  return fileData.buffer;
 }
 
 // Write File

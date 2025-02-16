@@ -1,4 +1,4 @@
-import { readFile } from '@tauri-apps/plugin-fs';
+import { readFile } from '@/services/platform';
 import { SupernoteX } from 'supernote-typescript';
 import { Image } from 'image-js';
 import { NotePageCache, NotePageExtractInfo } from '@/store';
@@ -13,7 +13,7 @@ export async function exportNote(
   extractInfo: NotePageExtractInfo<{ imageIndex?: number }>[];
 }> {
   const noteData = await readFile(notePath);
-  const note = new SupernoteX(new Uint8Array(noteData.buffer));
+  const note = new SupernoteX(new Uint8Array(noteData));
   const markedPdfPageNumbers = Object.keys(note.footer.PAGE);
 
   const previousJsonMarkInfo = previousExtractInfo || { pages: [], lastViewedPage: 0 };
