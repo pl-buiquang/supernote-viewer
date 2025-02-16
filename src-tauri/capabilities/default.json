@@ -20,6 +20,7 @@
       "identifier": "fs:scope",
       "allow": ["**/*", "$APPLOCALDATA/**/*"]
     },
-    "store:default"
+    "store:default",
+    "os:default"
   ]
 }

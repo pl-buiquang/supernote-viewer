@@ -1,31 +1,27 @@
-import { useEffect, useMemo, useState } from 'react';
-import { exportNote } from '@/services/noteViewer';
-import { Image } from 'image-js';
+import { useEffect, useRef } from 'react';
+import useNoteView from '@/hooks/useNoteView';
 
 type FileViewerProps = {
   file: string;
 };
 
 export default function PdfViewer(props: FileViewerProps) {
-  const [images, setImages] = useState<Image[]>(null);
   const { file } = props;
-  const currentFile = useMemo(() => file, [file]);
+  const currentFile = useRef<string>(null);
+  const { images, setNotePath } = useNoteView();
 
   useEffect(() => {
-    console.log(currentFile);
-    (async () => {
-      if (currentFile) {
-        const images = await exportNote(currentFile);
-        setImages(images);
-      }
-    })();
-  }, [currentFile]);
+    if (currentFile.current !== file) {
+      currentFile.current = file;
+      setNotePath(file);
+    }
+  }, [file]);
 
   if (images) {
     return (
       <>
         {images.map((image, i) => (
-          <img key={i} src={image.toDataURL()} alt={`Page ${i}`} />
+          <img key={i} src={image} alt={`Page ${i}`} />
         ))}
       </>
     );

@@ -11,10 +11,21 @@ import {
 import { open } from '@tauri-apps/plugin-dialog';
 import { Filesystem as CapFilesystem, Directory } from '@capacitor/filesystem';
 import { FilePicker } from '@capawesome/capacitor-file-picker';
+import { platform } from '@tauri-apps/plugin-os';
+// when using `"withGlobalTauri": true`, you may use
+// const { platform } = window.__TAURI__.os;
 
 // Detect Platform
 export const isTauri = !!(window as any).__TAURI__;
 export const isCapacitor = !!(window as any).Capacitor;
+
+export let isMobile = false;
+if (isTauri) {
+  const currentPlatform = platform();
+  isMobile = currentPlatform === 'android' || currentPlatform === 'ios';
+} else if (isCapacitor) {
+  isMobile = true;
+}
 
 // Read File
 export async function readFile(path: string, localAppData: boolean = false): Promise<ArrayBuffer> {

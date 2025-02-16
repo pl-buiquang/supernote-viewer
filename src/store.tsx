@@ -6,9 +6,16 @@ import { isTauri, isCapacitor } from './services/platform';
 // when using `"withGlobalTauri": true`, you may use
 // const { load } = window.__TAURI__.store;
 
-type NotePageCache = {
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type NotePageExtractInfo<T = {}> = {
+  pageNumber: string;
+  index: number;
+  marksCount: number;
+} & T;
+
+export type NotePageCache = {
   lastViewedPage: number;
-  pages: Record<string, { pageNumber: string; index: number; marksCount: number }>;
+  pages: NotePageExtractInfo[];
 };
 
 type AppStore = {
@@ -23,6 +30,8 @@ type AppStore = {
 interface StoreContextType {
   store: AppStore;
   setStoreValue: (key: string, value: any) => Promise<void>;
+  updateCache: (key: string, value: any) => Promise<void>;
+  updateFileCacheInfo: (key: string, value: any) => Promise<void>;
   removeData: (key: string) => Promise<void>;
 }
 
@@ -78,24 +87,45 @@ export const StoreProvider: React.FC<React.PropsWithChildren> = ({ children }: R
 
   useEffect(() => {
     const initializeStore = async () => {
-      const loadedStore = await loadData(['baseFolder', 'cache']);
+      const loadedStore = await loadData(['baseFolder', 'cache', 'fileCacheInfo']);
       loadedStore['cache'] = loadedStore['cache'] || {};
+      loadedStore['fileCacheInfo'] = loadedStore['fileCacheInfo'] || {};
       console.log('Loaded store', loadedStore);
       setStoreState((prevState) => ({ ...prevState, ...loadedStore }));
     };
     initializeStore();
   }, []);
 
-  const setStoreValue = async (key: string, value: any) => {
-    if (isTauri && tauriStore) {
-      console.log('Setting data in Tauri store');
-      await tauriStore.set(key, value);
-      await tauriStore.save(); // Persist data
-    } else if (isCapacitor) {
-      console.log('Setting data in Capacitor store');
-      await Preferences.set({ key, value: JSON.stringify(value) });
+  useEffect(() => {
+    async function saveData() {
+      await Promise.all(
+        Object.entries(storeState).map(async ([key, value]) => {
+          if (isTauri && tauriStore) {
+            console.log('Setting data in Tauri store');
+            await tauriStore.set(key, value);
+          } else if (isCapacitor) {
+            console.log('Setting data in Capacitor store');
+            await Preferences.set({ key, value: JSON.stringify(value) });
+          }
+        }),
+      );
+      if (isTauri && tauriStore) {
+        await tauriStore.save();
+      }
     }
+    saveData();
+  }, [storeState]);
+
+  const setStoreValue = async (key: string, value: any) => {
     setStoreState((prevState) => ({ ...prevState, [key]: value }));
+  };
+
+  const updateCache = async (key: string, value: any) => {
+    setStoreState((prevState) => ({ ...prevState, cache: { ...prevState.cache, [key]: value } }));
+  };
+
+  const updateFileCacheInfo = async (key: string, value: any) => {
+    setStoreState((prevState) => ({ ...prevState, fileCacheInfo: { ...prevState.fileCacheInfo, [key]: value } }));
   };
 
   // Remove Data
@@ -109,7 +139,9 @@ export const StoreProvider: React.FC<React.PropsWithChildren> = ({ children }: R
   };
 
   return (
-    <StoreContext.Provider value={{ store: storeState, setStoreValue, removeData }}>{children}</StoreContext.Provider>
+    <StoreContext.Provider value={{ store: storeState, setStoreValue, removeData, updateCache, updateFileCacheInfo }}>
+      {children}
+    </StoreContext.Provider>
   );
 };
 

@@ -13,23 +13,18 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 
-import { Button } from '@/components/ui/button';
 import { useStore } from '@/store';
-import { openDir, openFile } from '@/services/platform';
+import FilePicker from './FilePicker';
 
 export type AppSidebarProps = {} & React.ComponentProps<typeof Sidebar>;
 
-export function AppSidebar({ ...props }: AppSidebarProps) {
+export default function AppSidebar({ ...props }: AppSidebarProps) {
   const { setStoreValue } = useStore();
-  const handleChooseFolder = async () => {
-    // Open a dialog
-    const file = await openDir();
+  const handleChooseFolder = async (file: string) => {
     await setStoreValue('baseFolder', file);
   };
 
-  const handleChooseFile = async () => {
-    // Open a dialog
-    const file = await openFile();
+  const handleChooseFile = async (file: string) => {
     await setStoreValue('currentFile', file);
   };
 
@@ -47,9 +42,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
             <SidebarMenu>
               <SidebarMenuItem key="choose-file">
                 <SidebarMenuButton asChild>
-                  <Button className="w-full" onClick={handleChooseFile}>
-                    Open file
-                  </Button>
+                  <FilePicker onFilePick={handleChooseFile} />
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -61,9 +54,7 @@ export function AppSidebar({ ...props }: AppSidebarProps) {
             <SidebarMenu>
               <SidebarMenuItem key="choose-folder">
                 <SidebarMenuButton asChild>
-                  <Button className="w-full" onClick={handleChooseFolder}>
-                    Choose Folder
-                  </Button>
+                  <FilePicker onFilePick={handleChooseFolder} isFolder />
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

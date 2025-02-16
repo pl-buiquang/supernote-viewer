@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 const CACHE_DIR = 'cache';
 
 const useCache = () => {
-  const { store, setStoreValue } = useStore();
+  const { store, updateCache } = useStore();
 
   useEffect(() => {
     const initAppCacheDir = async () => {
@@ -23,7 +23,7 @@ const useCache = () => {
       const uuid = uuidv4();
       const cachePath = `${CACHE_DIR}/${uuid}`;
       console.log('Caching file', filepath, 'to', cachePath);
-      await setStoreValue('cache', { ...store.cache, [filepath]: cachePath });
+      await updateCache(filepath, cachePath);
       return cachePath;
     } else {
       return store.cache[filepath];
