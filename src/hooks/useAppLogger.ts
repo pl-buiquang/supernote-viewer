@@ -1,19 +1,24 @@
-import { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { AppLoggerContext } from '@/components/AppLogger';
+import { useContext } from 'react';
 
-type LogMessage = {
-  message: string;
-  component: string;
-  type: 'debug' | 'info' | 'warn' | 'error';
-};
+export const useAppLogger = (loggerName?: string) => {
+  const context = useContext(AppLoggerContext);
+  if (context === undefined) {
+    throw new Error('useAppLogger must be used within an AppLoggerProvider');
+  }
 
-const useAppLogger = () => {
-  const [logs, setLogs] = useState<LogMessage[]>([]);
-  const logMessage = (message: string, component?: string, type?: LogMessage['type']) => {
-    const logType = type || 'info';
-    const logComponent = component || 'app';
-    setLogs((prevLogs) => [...prevLogs, { message, component: logComponent, type: logType }]);
+  return {
+    logs: context.logs,
+    logInfo: (msg: string, ...args: any[]) =>
+      context.logMessage(`${msg} ${args?.map((e) => JSON.stringify(e))}`, loggerName, 'info'),
+    logError: (msg: string, ...args: any[]) =>
+      context.logMessage(`${msg} ${args?.map((e) => JSON.stringify(e))}`, loggerName, 'error'),
+    logWarn: (msg: string, ...args: any[]) =>
+      context.logMessage(`${msg} ${args?.map((e) => JSON.stringify(e))}`, loggerName, 'warn'),
+    logDebug: (msg: string, ...args: any[]) =>
+      context.logMessage(`${msg} ${args?.map((e) => JSON.stringify(e))}`, loggerName, 'debug'),
   };
-  return { logs, logMessage };
 };
 
 export default useAppLogger;

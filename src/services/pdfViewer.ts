@@ -1,7 +1,8 @@
 import { PDFDict, PDFDocument, PDFName, PDFRef, PDFStream } from 'pdf-lib';
-import { SupernoteX, toImage } from 'supernote-typescript';
+import { SupernoteX } from 'supernote-typescript';
 import pako from 'pako';
 import { readFile, writeFile } from './platform';
+import { extractImages } from './imageExtractor';
 
 export async function exportPdf(
   pdfPath: string,
@@ -62,7 +63,7 @@ export async function exportPdf(
     updateOrNewPagesIndexes.includes(page - 1),
   );
   logMsg(`Extracting pages ${pagesToExtract} from the mark file...`);
-  const markImages = await toImage(note, pagesToExtract);
+  const markImages = await extractImages(note, pagesToExtract);
   logMsg(`Extracted ${pagesToExtract.length} pages from the mark file.`);
 
   await Promise.all(

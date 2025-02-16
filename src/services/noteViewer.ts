@@ -1,19 +1,19 @@
 import { readFile } from '@tauri-apps/plugin-fs';
-import { SupernoteX, toImage } from 'supernote-typescript';
+import { SupernoteX } from 'supernote-typescript';
 import { Image } from 'image-js';
 import { NotePageCache, NotePageExtractInfo } from '@/store';
+import { extractImages } from './imageExtractor';
 
 export async function exportNote(
   notePath: string,
   previousExtractInfo?: NotePageCache,
+  logger: (msg: string) => void = console.log,
 ): Promise<{
   images: Image[];
   extractInfo: NotePageExtractInfo<{ imageIndex?: number }>[];
 }> {
   const noteData = await readFile(notePath);
   const note = new SupernoteX(new Uint8Array(noteData.buffer));
-  console.log(note);
-  console.log(noteData);
   const markedPdfPageNumbers = Object.keys(note.footer.PAGE);
 
   const previousJsonMarkInfo = previousExtractInfo || { pages: [], lastViewedPage: 0 };
@@ -35,9 +35,9 @@ export async function exportNote(
   const pagesToExtract = Array.from({ length: numPages }, (_, i) => i + 1).filter((page) =>
     updateOrNewPagesIndexes.includes(page - 1),
   );
-  console.log(`Extracting pages ${pagesToExtract} from the mark file...`);
-  const markImages = await toImage(note, pagesToExtract);
-  console.log(`Extracted ${pagesToExtract.length} pages from the mark file.`);
+  logger(`Extracting pages ${pagesToExtract} from the mark file...`);
+  const markImages = await extractImages(note, pagesToExtract);
+  logger(`Extracted ${pagesToExtract.length} pages from the mark file.`);
 
   const updatedMarkInfo = jsonMarkInfo.map((page) => {
     const info: NotePageExtractInfo<{ imageIndex?: number }> = { ...page };

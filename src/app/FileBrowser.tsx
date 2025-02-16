@@ -11,6 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { FileItem, FileType, listFiles } from '@/services/platform';
+import useCache from '@/hooks/useCache';
+import useAppLogger from '@/hooks/useAppLogger';
 
 const FileIcon: React.FC<{ type: FileType }> = ({ type }) => {
   switch (type) {
@@ -27,7 +29,9 @@ const FileIcon: React.FC<{ type: FileType }> = ({ type }) => {
 
 export default function FileBrowser() {
   const [files, setFiles] = useState<FileItem[]>([]);
+  const { logInfo } = useAppLogger('file-browser');
   const { store, setStoreValue } = useStore();
+  const { deleteCache } = useCache();
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,7 +47,7 @@ export default function FileBrowser() {
 
   useEffect(() => {
     (async () => {
-      console.log('Listing files from', currentFolder);
+      logInfo('Listing files from', currentFolder);
       if (!currentFolder) return;
       const files = await listFiles(currentFolder);
       setFiles(files);
@@ -57,6 +61,11 @@ export default function FileBrowser() {
     } else {
       await setStoreValue('currentFile', currentFolder + '/' + file.name);
     }
+  };
+
+  const handleClearCache = async (fileId: string) => {
+    logInfo('Clearing cache for', fileId);
+    await deleteCache(currentFolder + '/' + fileId);
   };
 
   return (
@@ -96,9 +105,8 @@ export default function FileBrowser() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Open</DropdownMenuItem>
-                      <DropdownMenuItem>Rename</DropdownMenuItem>
-                      <DropdownMenuItem>Delete</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleFileClick(file)}>Open</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleClearCache(file.id)}>Clear cache</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </td>

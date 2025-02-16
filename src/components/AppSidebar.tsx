@@ -3,6 +3,7 @@ import * as React from 'react';
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -15,6 +16,7 @@ import {
 
 import { useStore } from '@/store';
 import FilePicker from './FilePicker';
+import { Link } from 'react-router-dom';
 
 export type AppSidebarProps = {} & React.ComponentProps<typeof Sidebar>;
 
@@ -32,7 +34,7 @@ export default function AppSidebar({ ...props }: AppSidebarProps) {
     <Sidebar {...props}>
       <SidebarHeader>
         <div className="p-4">
-          <h1 className="text-xl font-bold">Menu</h1>
+          <h1 className="text-xl font-bold">Supernote Viewer</h1>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -61,6 +63,22 @@ export default function AppSidebar({ ...props }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <Link to="/logs">
+                <span className="text-sm text-gray-500">Logs</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <p className="text-sm text-gray-500">
+              Version : {__APP_VERSION__}-{__GIT_COMMIT__}
+            </p>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

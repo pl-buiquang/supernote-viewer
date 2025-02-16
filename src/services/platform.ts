@@ -5,6 +5,7 @@ import {
   exists as tauriExists,
   readFile as tauriReadFile,
   writeFile as tauriWriteFile,
+  remove as tauriDeleteFile,
   BaseDirectory,
   mkdir,
 } from '@tauri-apps/plugin-fs';
@@ -40,6 +41,15 @@ export const exists = async (path: string, localAppData: boolean = false): Promi
   console.log('Tauri: Checking if file exists', path);
   const options = localAppData ? { baseDir: BaseDirectory.AppLocalData } : {};
   return await tauriExists(path, options);
+};
+
+export const deleteFile = async (path: string, localAppData: boolean = false) => {
+  console.log('Tauri: Deleting file', path);
+  const options = localAppData ? { baseDir: BaseDirectory.AppLocalData } : {};
+  const exists = await tauriExists(path, options);
+  if (exists) {
+    await tauriDeleteFile(path, options);
+  }
 };
 
 export type FileType = 'pdf' | 'note' | 'directory' | 'unknown';

@@ -14,7 +14,7 @@ type FileViewerProps = {
 };
 
 export default function PdfViewer(props: FileViewerProps) {
-  const { logMessage, logs } = useAppLogger();
+  const { logInfo, logs } = useAppLogger('pdf-viewer');
   const { getCachedFile, exists } = useCache();
   const [outputFilePath, setOutputFilePath] = useState<string | null>(null);
   const [outputData, setOutputData] = useState<ArrayBuffer | null>(null);
@@ -33,22 +33,22 @@ export default function PdfViewer(props: FileViewerProps) {
         if (file.endsWith('marked.pdf')) {
           setOutputFilePath(file);
         } else {
-          console.log('Exporting PDF to marked PDF');
+          logInfo('Exporting PDF to marked PDF');
           const markFilepath = `${file}.mark`;
           const previousExportExists = await exists(`${file.replace('.pdf', '')}.marked.pdf`);
-          console.log('Previous export exists', previousExportExists);
+          logInfo('Previous export exists' + previousExportExists);
           const outputFilename = await getCachedFile(`${file.replace('.pdf', '')}.marked.pdf`);
-          console.log('Output filename:', outputFilename);
+          logInfo('Output filename:' + outputFilename);
           const sourceFile = previousExportExists ? outputFilename : file;
-          console.log('Source file:', sourceFile);
+          logInfo('Source file:' + sourceFile);
           const outputFilePath = await exportPdfTo(
             sourceFile,
             markFilepath,
             outputFilename,
             previousExportExists,
             (msg: string) => {
-              console.log(msg);
-              logMessage(msg, 'pdfViewer');
+              logInfo(msg);
+              logInfo(msg);
             },
           );
           setOutputFilePath(outputFilePath);
@@ -65,12 +65,12 @@ export default function PdfViewer(props: FileViewerProps) {
 
   useEffect(() => {
     const loadPdf = async () => {
-      console.log('Loading PDF', outputFilePath);
+      logInfo('Loading PDF', outputFilePath);
       const loadingTask = pdfjs.getDocument(outputData);
       const pdf = await loadingTask.promise;
-      console.log('PDF loaded');
+      logInfo('PDF loaded');
       setNumPages(pdf.numPages);
-      console.log('Number of pages:', pdf.numPages);
+      logInfo('Number of pages:', pdf.numPages);
 
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
@@ -129,7 +129,7 @@ export default function PdfViewer(props: FileViewerProps) {
 
   useEffect(() => {
     const loadPdfData = async () => {
-      console.log('Loading PDF Data', outputFilePath);
+      logInfo('Loading PDF Data', outputFilePath);
       const pdfData = await readFile(outputFilePath, true);
       setOutputData(pdfData);
     };

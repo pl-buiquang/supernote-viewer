@@ -3,9 +3,11 @@ import { useStore } from '@/store';
 import { useEffect, useState } from 'react';
 import useCache from './useCache';
 import { readFile, writeFile } from '@/services/platform';
+import useAppLogger from './useAppLogger';
 
 export default function useNoteView() {
   const { store, updateFileCacheInfo } = useStore();
+  const { logInfo } = useAppLogger('note-viewer');
   const { getCachedFile } = useCache();
   const [notePath, setNotePath] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>(null);
@@ -26,10 +28,10 @@ export default function useNoteView() {
   useEffect(() => {
     (async () => {
       if (notePath) {
-        console.log('Extracting note', notePath);
+        logInfo('Extracting note', notePath);
         const previousExtractInfo = store.fileCacheInfo[notePath];
-        console.log('Previous extract info', previousExtractInfo);
-        const { images, extractInfo } = await exportNote(notePath, previousExtractInfo);
+        logInfo('Previous extract info', previousExtractInfo);
+        const { images, extractInfo } = await exportNote(notePath, previousExtractInfo, (msg: string) => logInfo(msg));
         await updateFileCacheInfo(notePath, {
           pages: extractInfo.map((info) => ({
             index: info.index,
@@ -38,7 +40,7 @@ export default function useNoteView() {
           })),
           lastViewedPage: 0,
         });
-        console.log('Combining newly extracted images with cached ones');
+        logInfo('Combining newly extracted images with cached ones');
         const allImages = await Promise.all(
           extractInfo.map(async (page) => {
             const imageCachePath = notePath + page.pageNumber;
