@@ -6,37 +6,39 @@ import { Link } from 'react-router-dom';
 export default function LogViewer() {
   const { logs } = useAppLogger();
   return (
-    <div className="container mx-auto py-8">
+    <div className="flex flex-col flex-1 p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Log Viewer</h1>
         <Link to="/">
           <Button variant="outline">Back to Main App</Button>
         </Link>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Timestamp</TableHead>
-            <TableHead>Level</TableHead>
-            <TableHead>Component</TableHead>
-            <TableHead>Message</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {logs.map((log, index) => (
-            <TableRow key={index}>
-              <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-              <TableCell>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelClass(log.level)}`}>
-                  {log.level}
-                </span>
-              </TableCell>
-              <TableCell>{log.component}</TableCell>
-              <TableCell style={{ width: '500px' }}>{log.message}</TableCell>
+      <div className="flex flex-1">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Timestamp</TableHead>
+              <TableHead>Level</TableHead>
+              <TableHead>Component</TableHead>
+              <TableHead>Message</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {logs.map((log, index) => (
+              <TableRow key={index}>
+                <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelClass(log.level)}`}>
+                    {log.level}
+                  </span>
+                </TableCell>
+                <TableCell>{log.component}</TableCell>
+                <TableCell className="break-words max-w-xs">{log.message}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

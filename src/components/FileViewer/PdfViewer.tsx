@@ -14,7 +14,7 @@ type FileViewerProps = {
 };
 
 export default function PdfViewer(props: FileViewerProps) {
-  const { logInfo, logs } = useAppLogger('pdf-viewer');
+  const { logInfo } = useAppLogger('pdf-viewer');
   const { getCachedFile, exists } = useCache();
   const [outputFilePath, setOutputFilePath] = useState<string | null>(null);
   const [outputData, setOutputData] = useState<ArrayBuffer | null>(null);
@@ -35,9 +35,9 @@ export default function PdfViewer(props: FileViewerProps) {
         } else {
           logInfo('Exporting PDF to marked PDF');
           const markFilepath = `${file}.mark`;
-          const previousExportExists = await exists(`${file.replace('.pdf', '')}.marked.pdf`);
+          const previousExportExists = await exists(file);
           logInfo('Previous export exists' + previousExportExists);
-          const outputFilename = await getCachedFile(`${file.replace('.pdf', '')}.marked.pdf`);
+          const outputFilename = await getCachedFile(file);
           logInfo('Output filename:' + outputFilename);
           const sourceFile = previousExportExists ? outputFilename : file;
           logInfo('Source file:' + sourceFile);
@@ -139,14 +139,7 @@ export default function PdfViewer(props: FileViewerProps) {
   }, [outputFilePath]);
 
   if (loading || !outputData) {
-    return (
-      <div>
-        <div>Loading ...</div>
-        {logs.map((log, i) => (
-          <div key={i}>{log.message}</div>
-        ))}
-      </div>
-    );
+    return <div>Loading ...</div>;
   }
 
   return (
