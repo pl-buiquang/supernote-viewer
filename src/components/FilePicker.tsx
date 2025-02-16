@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { isCapacitor, isMobile, isTauri, openDir, openFile } from '@/services/platform';
+import { isMobile, openDir, openFile } from '@/services/platform';
 
 type FilePickerProps = {
   onFilePick: (file: string) => Promise<void>;
@@ -39,7 +39,7 @@ export default function FilePicker(props: FilePickerProps) {
     await onFilePick(file);
   };
 
-  if ((isTauri && (!isMobile || !isFolder)) || (isCapacitor && !isFolder)) {
+  if (!isMobile || !isFolder) {
     return (
       <Button className="w-full" onClick={handleNativeChooseFile}>
         {buttonTitle}

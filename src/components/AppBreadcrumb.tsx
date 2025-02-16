@@ -10,7 +10,8 @@ import { useStore } from '@/store';
 
 export function AppBreadcrumb() {
   const { store, setStoreValue } = useStore();
-  const { baseFolder, currentPath } = store;
+  const { baseFolder, currentPath, currentFile } = store;
+  const currentFullPath = [baseFolder, ...currentPath].join('/') + '/';
 
   const handleHomeClick = async () => {
     await setStoreValue('currentPath', []);
@@ -25,14 +26,14 @@ export function AppBreadcrumb() {
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        <BreadcrumbItem className="hidden md:block">
+        <BreadcrumbItem className="md:block">
           <BreadcrumbLink href="#" onClick={handleHomeClick}>
             {baseFolder}
           </BreadcrumbLink>
         </BreadcrumbItem>
         {currentPath.map((item, i) => (
           <>
-            <BreadcrumbSeparator className="hidden md:block" />
+            <BreadcrumbSeparator className="md:block" />
             <BreadcrumbItem>
               <BreadcrumbPage>
                 <BreadcrumbLink onClick={() => handlePathClick(i)}>{item}</BreadcrumbLink>
@@ -40,6 +41,20 @@ export function AppBreadcrumb() {
             </BreadcrumbItem>
           </>
         ))}
+        {currentFile && (
+          <>
+            <BreadcrumbSeparator className="md:block" />
+            <BreadcrumbItem>
+              <BreadcrumbPage>
+                <BreadcrumbLink>
+                  {currentFile.startsWith(currentFullPath)
+                    ? currentFile.substring(currentFullPath.length)
+                    : currentFile}
+                </BreadcrumbLink>
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </>
+        )}
       </BreadcrumbList>
     </Breadcrumb>
   );

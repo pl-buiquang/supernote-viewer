@@ -12,6 +12,8 @@ export async function exportNote(
 }> {
   const noteData = await readFile(notePath);
   const note = new SupernoteX(new Uint8Array(noteData.buffer));
+  console.log(note);
+  console.log(noteData);
   const markedPdfPageNumbers = Object.keys(note.footer.PAGE);
 
   const previousJsonMarkInfo = previousExtractInfo || { pages: [], lastViewedPage: 0 };

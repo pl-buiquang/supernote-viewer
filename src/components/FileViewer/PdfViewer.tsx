@@ -1,8 +1,6 @@
 /* eslint-disable react/react-in-jsx-scope */
 import { useEffect, useRef, useState } from 'react';
 import { exportPdfTo } from '../../services/pdfViewer';
-import 'react-pdf/dist/Page/TextLayer.css';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { readFile } from '@/services/platform';
 import * as pdfjs from 'pdfjs-dist';
 import { RefProxy } from 'pdfjs-dist/types/src/display/api';
