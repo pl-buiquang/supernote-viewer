@@ -5,7 +5,7 @@ type FileViewerProps = {
   file: string;
 };
 
-export default function PdfViewer(props: FileViewerProps) {
+export default function NoteViewer(props: FileViewerProps) {
   const { file } = props;
   const currentFile = useRef<string>(null);
   const { images, setNotePath } = useNoteView();

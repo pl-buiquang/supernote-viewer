@@ -14,8 +14,10 @@ import { platform } from '@tauri-apps/plugin-os';
 // when using `"withGlobalTauri": true`, you may use
 // const { platform } = window.__TAURI__.os;
 
+export const withTauri = !!(window as any).__TAURI__;
+
 // Detect Platform
-export const isMobile = platform() === 'android' || platform() === 'ios';
+export const isMobile = withTauri && (platform() === 'android' || platform() === 'ios');
 
 // Read File
 export async function readFile(path: string, localAppData: boolean = false): Promise<ArrayBuffer> {

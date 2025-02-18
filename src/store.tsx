@@ -41,7 +41,14 @@ export async function loadData(keys: string[]): Promise<any> {
   return await Promise.all(keys.map((key) => store.get(key)));
 }
 
-export const StoreProvider: React.FC<React.PropsWithChildren> = ({ children }: React.PropsWithChildren) => {
+type StoreProviderProps = {
+  initialFile: string | null;
+};
+
+export const StoreProvider: React.FC<React.PropsWithChildren<StoreProviderProps>> = ({
+  initialFile,
+  children,
+}: React.PropsWithChildren<StoreProviderProps>) => {
   const [storeState, setStoreState] = useState<AppStore>({
     baseFolder: null,
     cache: {},
@@ -72,6 +79,12 @@ export const StoreProvider: React.FC<React.PropsWithChildren> = ({ children }: R
     };
     initializeStore();
   }, []);
+
+  useEffect(() => {
+    if (initialFile) {
+      setStoreState((prevState) => ({ ...prevState, currentFile: initialFile }));
+    }
+  }, [initialFile]);
 
   useEffect(() => {
     async function saveData() {

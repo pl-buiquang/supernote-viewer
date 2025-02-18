@@ -21,6 +21,9 @@
       "allow": ["**/*", "$APPLOCALDATA/**/*"]
     },
     "store:default",
-    "os:default"
+    "os:default",
+    "core:event:default",
+    "deep-link:default",
+    "deep-link:allow-get-current"
   ]
 }

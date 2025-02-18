@@ -40,6 +40,19 @@ export default function FilePicker(props: FilePickerProps) {
   };
 
   if (!isMobile || !isFolder) {
+    // if (!withTauri) {
+    //   return (
+    //     <input
+    //       type="file"
+    //       onChange={async (e) => {
+    //         const file = e.target.files?.[0];
+    //         if (file) {
+    //           await onFilePick(file);
+    //         }
+    //       }}
+    //     />
+    //   );
+    // }
     return (
       <Button className="w-full" onClick={handleNativeChooseFile}>
         {buttonTitle}

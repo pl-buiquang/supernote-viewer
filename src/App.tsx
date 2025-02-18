@@ -8,13 +8,26 @@ import { AppBreadcrumb } from './components/AppBreadcrumb';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import routes from './routes';
 import AppLoggerProvider from './components/AppLogger';
+import { getCurrent as getCurrentDeepLinkUrls } from '@tauri-apps/plugin-deep-link';
+import { useEffect, useState } from 'react';
 
 export default function App() {
+  const [initialFile, setInitialFile] = useState<string | null>(null);
   useIsMobile();
+
+  useEffect(() => {
+    (async () => {
+      const urls = await getCurrentDeepLinkUrls();
+      if (urls.length > 0) {
+        console.log('Started with deep link urls', urls);
+        setInitialFile(urls[0]);
+      }
+    })();
+  }, []);
 
   return (
     <AppLoggerProvider>
-      <StoreProvider>
+      <StoreProvider initialFile={initialFile}>
         <SidebarProvider>
           <Router>
             <AppSidebar />

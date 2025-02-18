@@ -23,6 +23,9 @@
       "identifier": "fs:scope",
       "allow": ["**/*", "$APPLOCALDATA/**/*"]
     },
-    "store:default"
+    "store:default",
+    "core:event:default",
+    "deep-link:default",
+    "deep-link:allow-get-current"
   ]
 }

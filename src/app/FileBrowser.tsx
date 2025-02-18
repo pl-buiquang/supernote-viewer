@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { FileItem, FileType, listFiles } from '@/services/platform';
 import useCache from '@/hooks/useCache';
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import useAppLogger from '@/hooks/useAppLogger';
 
 const FileIcon: React.FC<{ type: FileType }> = ({ type }) => {
@@ -33,6 +34,17 @@ export default function FileBrowser() {
   const { store, setStoreValue } = useStore();
   const { deleteCache } = useCache();
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      await onOpenUrl((urls) => {
+        console.log('Received deep link urls', urls);
+        if (urls.length > 0) {
+          setStoreValue('currentFile', urls[0]);
+        }
+      });
+    })();
+  }, []);
 
   useEffect(() => {
     (async () => {
