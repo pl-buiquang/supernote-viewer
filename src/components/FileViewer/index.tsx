@@ -14,7 +14,7 @@ export default function FileViewer(props: FileViewerProps) {
   const { file } = props;
 
   return (
-    <div className="bg-muted/50" style={{ maxWidth: '1024px', height: '100%' }}>
+    <div style={{ maxWidth: '1024px', height: '100%' }}>
       {Object.entries(viewers).find(([ext]) => file.endsWith(ext))?.[1](file) || <div>Unsupported file type</div>}
     </div>
   );

@@ -6,6 +6,7 @@ import * as pdfjs from 'pdfjs-dist';
 import { RefProxy } from 'pdfjs-dist/types/src/display/api';
 import useAppLogger from '@/hooks/useAppLogger';
 import useCache from '@/hooks/useCache';
+import './index.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs`;
 
@@ -139,11 +140,20 @@ export default function PdfViewer(props: FileViewerProps) {
   }, [outputFilePath]);
 
   if (loading || !outputData) {
-    return <div>Loading ...</div>;
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="flex items-center justify-center h-full mt-20">
+          <div className="flex flex-col items-center gap-4">
+            <div className="loader"></div>
+            <div>Loading...</div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center bg-muted/50">
       <div style={{ position: 'relative', overflowY: 'auto', height: '100%' }}>
         {Array.from({ length: numPages }, (_, i) => (
           <div

@@ -25,7 +25,7 @@ export function AppBreadcrumb() {
 
   return (
     <Breadcrumb>
-      <BreadcrumbList>
+      <BreadcrumbList className="break-all">
         <BreadcrumbItem className="md:block">
           <BreadcrumbLink href="#" onClick={handleHomeClick}>
             {baseFolder}
