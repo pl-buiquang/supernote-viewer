@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 type UseScrollPositionProps = {
   scrollableContainerRef: React.RefObject<HTMLDivElement>;
   file: string;
-  data: unknown;
+  loaded: boolean;
+  initLastScrollPosition?: boolean;
 };
 
 const useScrollPosition = (props: UseScrollPositionProps) => {
-  const { scrollableContainerRef, file, data } = props;
+  const { scrollableContainerRef, file, loaded, initLastScrollPosition = false } = props;
   const { store, updateFileScrollPosition, updateLastViewedPage } = useStore();
+  const [lastScrollPosition] = useState<number>(store.fileScrollPosition[file]);
   const [currentPageInView, setCurrentPageInView] = useState<number>(null);
 
   const getViewableElements = () => {
@@ -40,10 +42,13 @@ const useScrollPosition = (props: UseScrollPositionProps) => {
   };
 
   useEffect(() => {
-    if (scrollableContainerRef.current && store.fileScrollPosition[file]) {
-      scrollableContainerRef.current.parentElement.scrollTop = store.fileScrollPosition[file];
-    }
-    if (scrollableContainerRef.current) {
+    if (scrollableContainerRef.current && loaded) {
+      if (initLastScrollPosition && lastScrollPosition) {
+        if (scrollableContainerRef.current && lastScrollPosition) {
+          console.log('Setting scroll position', lastScrollPosition);
+          scrollableContainerRef.current.parentElement.scrollTop = lastScrollPosition;
+        }
+      }
       const handleScroll = () => {
         updateLastViewedPageNumber();
         if (store.currentFile && scrollableContainerRef.current.parentElement.scrollTop !== 0) {
@@ -56,7 +61,7 @@ const useScrollPosition = (props: UseScrollPositionProps) => {
         scrollableContainerRef.current.parentElement.removeEventListener('scroll', handleScroll);
       };
     }
-  }, [data]);
+  }, [loaded]);
 
   return { currentPageInView };
 };

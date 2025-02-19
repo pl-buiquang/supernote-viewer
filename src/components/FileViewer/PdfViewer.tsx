@@ -29,15 +29,15 @@ export default function PdfViewer(props: FileViewerProps) {
   const linksRefs = useRef([]);
   const canvasRefs = useRef<HTMLCanvasElement[]>([]);
   const [pageIds, setPageIds] = useState<Record<string, RefProxy>>({});
-  const { currentPageInView } = useScrollPosition({ scrollableContainerRef, file, data: numPages });
-  const lastViewedPage = useRef(store.fileCacheInfo[file]?.lastViewedPage);
+  const { currentPageInView } = useScrollPosition({ scrollableContainerRef, file, loaded: numPages > 0 });
+  const [lastViewedPage] = useState(store.fileCacheInfo[file]?.lastViewedPage);
 
   useEffect(() => {
-    if (lastViewedPage.current && !loading) {
-      console.log('Scrolling to page', lastViewedPage.current);
-      const img = canvasRefs.current[lastViewedPage.current];
+    if (lastViewedPage && !loading) {
+      console.log('Scrolling to page', lastViewedPage);
+      const img = canvasRefs.current[lastViewedPage];
       if (img) {
-        loadPages(lastViewedPage.current);
+        loadPages(lastViewedPage);
         img.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }
@@ -45,6 +45,7 @@ export default function PdfViewer(props: FileViewerProps) {
 
   useEffect(() => {
     (async () => {
+      // TODO remove this, it was to make sure not to load multiple time the same file
       if (file !== currentProcessedFile.current) {
         currentProcessedFile.current = file;
         logInfo('Exporting PDF to marked PDF');

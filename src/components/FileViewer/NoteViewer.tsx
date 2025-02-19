@@ -12,9 +12,10 @@ export default function NoteViewer(props: FileViewerProps) {
   const { file, scrollableContainerRef } = props;
   const currentFile = useRef<string>(null);
   const { images, setNotePath } = useNoteView();
-  useScrollPosition({ scrollableContainerRef, file, data: images });
+  useScrollPosition({ scrollableContainerRef, file, loaded: !!images, initLastScrollPosition: true });
 
   useEffect(() => {
+    // TODO remove this, it was to make sure not to load multiple time the same file
     if (currentFile.current !== file) {
       currentFile.current = file;
       setNotePath(file);
