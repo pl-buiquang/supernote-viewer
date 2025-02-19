@@ -32,6 +32,7 @@ interface StoreContextType {
   updateCache: (key: string, value: any) => Promise<void>;
   updateFileCacheInfo: (key: string, value: any) => Promise<void>;
   updateFileScrollPosition: (key: string, value: number) => Promise<void>;
+  updateLastViewedPage: (key: string, value: number) => Promise<void>;
   removeData: (key: string) => Promise<void>;
 }
 
@@ -108,21 +109,36 @@ export const StoreProvider: React.FC<React.PropsWithChildren<StoreProviderProps>
   }, [storeState]);
 
   const setStoreValue = async (key: string, value: any) => {
+    console.log('Setting store value', key, value);
     setStoreState((prevState) => ({ ...prevState, [key]: value }));
   };
 
   const updateCache = async (key: string, value: any) => {
+    console.log('Updating cache', key, value);
     setStoreState((prevState) => ({ ...prevState, cache: { ...prevState.cache, [key]: value } }));
   };
 
   const updateFileCacheInfo = async (key: string, value: any) => {
+    console.log('Updating file cache info', key, value);
     setStoreState((prevState) => ({ ...prevState, fileCacheInfo: { ...prevState.fileCacheInfo, [key]: value } }));
   };
 
   const updateFileScrollPosition = async (key: string, value: number) => {
+    console.log('Updating file scroll position', key, value);
     setStoreState((prevState) => ({
       ...prevState,
       fileScrollPosition: { ...prevState.fileScrollPosition, [key]: value },
+    }));
+  };
+
+  const updateLastViewedPage = async (key: string, value: number) => {
+    console.log('Updating last viewed page', key, value);
+    setStoreState((prevState) => ({
+      ...prevState,
+      fileCacheInfo: {
+        ...prevState.fileCacheInfo,
+        [key]: { pages: prevState.fileCacheInfo[key]?.pages, lastViewedPage: value },
+      },
     }));
   };
 
@@ -143,6 +159,7 @@ export const StoreProvider: React.FC<React.PropsWithChildren<StoreProviderProps>
         updateCache,
         updateFileCacheInfo,
         updateFileScrollPosition,
+        updateLastViewedPage,
       }}
     >
       {children}

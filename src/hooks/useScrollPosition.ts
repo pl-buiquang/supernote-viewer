@@ -1,5 +1,5 @@
 import { useStore } from '@/store';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 type UseScrollPositionProps = {
   scrollableContainerRef: React.RefObject<HTMLDivElement>;
@@ -9,7 +9,35 @@ type UseScrollPositionProps = {
 
 const useScrollPosition = (props: UseScrollPositionProps) => {
   const { scrollableContainerRef, file, data } = props;
-  const { store, updateFileScrollPosition } = useStore();
+  const { store, updateFileScrollPosition, updateLastViewedPage } = useStore();
+  const [currentPageInView, setCurrentPageInView] = useState<number>(null);
+
+  const getViewableElements = () => {
+    if (!scrollableContainerRef.current?.parentElement) return;
+
+    const container = scrollableContainerRef.current?.parentElement;
+    const containerRect = container.getBoundingClientRect();
+    const items = Array.from(container.getElementsByClassName('page'));
+
+    const visibleItems = items.filter((item) => {
+      const itemRect = item.getBoundingClientRect();
+      return (
+        itemRect.bottom > containerRect.top && // Item is not scrolled above
+        itemRect.top < containerRect.bottom // Item is not scrolled below
+      );
+    });
+
+    return visibleItems;
+  };
+
+  const updateLastViewedPageNumber = () => {
+    const viewablesElements = getViewableElements();
+    if (viewablesElements.length > 0) {
+      const lastViewedPage = parseInt(viewablesElements[0]?.id);
+      setCurrentPageInView(lastViewedPage);
+      updateLastViewedPage(file, lastViewedPage);
+    }
+  };
 
   useEffect(() => {
     if (scrollableContainerRef.current && store.fileScrollPosition[file]) {
@@ -17,6 +45,7 @@ const useScrollPosition = (props: UseScrollPositionProps) => {
     }
     if (scrollableContainerRef.current) {
       const handleScroll = () => {
+        updateLastViewedPageNumber();
         if (store.currentFile && scrollableContainerRef.current.parentElement.scrollTop !== 0) {
           updateFileScrollPosition(store.currentFile, scrollableContainerRef.current.parentElement.scrollTop);
         }
@@ -28,6 +57,8 @@ const useScrollPosition = (props: UseScrollPositionProps) => {
       };
     }
   }, [data]);
+
+  return { currentPageInView };
 };
 
 export default useScrollPosition;

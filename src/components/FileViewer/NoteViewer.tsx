@@ -25,7 +25,7 @@ export default function NoteViewer(props: FileViewerProps) {
     return (
       <>
         {images.map((image, i) => (
-          <div key={i} className="bg-muted/50 flex justify-center items-center mb-6">
+          <div id={`${i}`} key={i} className="bg-muted/50 flex justify-center items-center mb-6 page">
             <img src={image} alt={`Page ${i}`} />
           </div>
         ))}

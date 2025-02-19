@@ -19,7 +19,7 @@ export default function App() {
   useEffect(() => {
     (async () => {
       const urls = await getCurrentDeepLinkUrls();
-      if (urls.length > 0) {
+      if (urls?.length > 0) {
         console.log('Started with deep link urls', urls);
         setInitialFile(urls[0]);
       }

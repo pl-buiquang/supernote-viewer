@@ -48,13 +48,15 @@ const useCache = () => {
     const fileCacheInfo = store.fileCacheInfo[filepath];
     if (fileCacheInfo) {
       const { pages } = fileCacheInfo;
-      for (const page of pages) {
-        const imageCachePath = filepath + page.pageNumber;
-        const cachedImagePath = store.cache[imageCachePath];
-        console.log('Deleting file cache for', imageCachePath);
-        if (cachedImagePath) {
-          await deleteFile(cachedImagePath, true);
-          await updateCache(imageCachePath, null);
+      if (pages) {
+        for (const page of pages) {
+          const imageCachePath = filepath + page.pageNumber;
+          const cachedImagePath = store.cache[imageCachePath];
+          console.log('Deleting file cache for', imageCachePath);
+          if (cachedImagePath) {
+            await deleteFile(cachedImagePath, true);
+            await updateCache(imageCachePath, null);
+          }
         }
       }
       console.log('Deleting cache info for', filepath);

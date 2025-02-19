@@ -1,5 +1,5 @@
 /* eslint-disable react/react-in-jsx-scope */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { exportPdfTo } from '../../services/pdfViewer';
 import { readFile } from '@/services/platform';
 import * as pdfjs from 'pdfjs-dist';
@@ -8,6 +8,7 @@ import useAppLogger from '@/hooks/useAppLogger';
 import useCache from '@/hooks/useCache';
 import './index.css';
 import useScrollPosition from '@/hooks/useScrollPosition';
+import { useStore } from '@/store';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs`;
 
@@ -20,68 +21,103 @@ export default function PdfViewer(props: FileViewerProps) {
   const { file, scrollableContainerRef } = props;
   const { logInfo } = useAppLogger('pdf-viewer');
   const { getCachedFile, exists } = useCache();
-  const [outputFilePath, setOutputFilePath] = useState<string | null>(null);
-  const [outputData, setOutputData] = useState<ArrayBuffer | null>(null);
+  const { store } = useStore();
+  const [pdf, setPdf] = useState<pdfjs.PDFDocumentProxy | null>(null);
   const [loading, setLoading] = useState(true);
   const currentProcessedFile = useRef<string | null>(null);
   const [numPages, setNumPages] = useState(0);
   const linksRefs = useRef([]);
-  const canvasRefs = useRef([]); // Store references to canvas elements
+  const canvasRefs = useRef<HTMLCanvasElement[]>([]);
   const [pageIds, setPageIds] = useState<Record<string, RefProxy>>({});
+  const { currentPageInView } = useScrollPosition({ scrollableContainerRef, file, data: numPages });
+  const lastViewedPage = useRef(store.fileCacheInfo[file]?.lastViewedPage);
+
+  useEffect(() => {
+    if (lastViewedPage.current && !loading) {
+      console.log('Scrolling to page', lastViewedPage.current);
+      const img = canvasRefs.current[lastViewedPage.current];
+      if (img) {
+        loadPages(lastViewedPage.current);
+        img.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [pdf, loading]);
 
   useEffect(() => {
     (async () => {
       if (file !== currentProcessedFile.current) {
         currentProcessedFile.current = file;
-        if (file.endsWith('marked.pdf')) {
-          setOutputFilePath(file);
-        } else {
-          logInfo('Exporting PDF to marked PDF');
-          const markFilepath = `${file}.mark`;
-          const previousExportExists = await exists(file);
-          logInfo('Previous export exists' + previousExportExists);
-          const outputFilename = await getCachedFile(file);
-          logInfo('Output filename:' + outputFilename);
-          const sourceFile = previousExportExists ? outputFilename : file;
-          logInfo('Source file:' + sourceFile);
-          const outputFilePath = await exportPdfTo(
-            sourceFile,
-            markFilepath,
-            outputFilename,
-            previousExportExists,
-            (msg: string) => {
-              logInfo(msg);
-              logInfo(msg);
-            },
-          );
-          setOutputFilePath(outputFilePath);
-        }
+        logInfo('Exporting PDF to marked PDF');
+        const markFilepath = `${file}.mark`;
+        const previousExportExists = await exists(file);
+        logInfo('Previous export exists' + previousExportExists);
+        const outputFilename = await getCachedFile(file);
+        logInfo('Output filename:' + outputFilename);
+        const sourceFile = previousExportExists ? outputFilename : file;
+        logInfo('Source file:' + sourceFile);
+        const outputFilePath = await exportPdfTo(
+          sourceFile,
+          markFilepath,
+          outputFilename,
+          previousExportExists,
+          (msg: string) => {
+            logInfo(msg);
+          },
+        );
+        logInfo('Loading PDF Data', outputFilePath);
+        const pdfData = await readFile(outputFilePath, true);
+        logInfo('Loading PDF', outputFilePath);
+        const loadingTask = pdfjs.getDocument(pdfData);
+        const pdf = await loadingTask.promise;
+        setPdf(pdf);
+        logInfo('PDF loaded');
+        setNumPages(pdf.numPages);
+        logInfo('Number of pages:', pdf.numPages);
+
+        const pagesInfo = await Promise.all(
+          Array.from({ length: pdf.numPages }, async (_, i) => {
+            const page = await pdf.getPage(i + 1);
+            return { ref: page.ref, viewport: page.getViewport({ scale: 1.5 }), pageNumber: i + 1 };
+          }),
+        );
+        setPageIds(pagesInfo.reduce((acc, pageInfo) => ({ ...acc, [pageInfo.pageNumber]: pageInfo.ref }), {}));
       }
     })();
   }, [file]);
 
   useEffect(() => {
-    if (outputFilePath !== null) {
-      setLoading(false);
-    }
-  }, [outputFilePath]);
+    const initPages = async () => {
+      if (pdf && Object.keys(pageIds).length > 0) {
+        console.log('Initializing pages', pageIds);
+        await Promise.all(
+          Array.from({ length: pdf.numPages }, async (_, i) => {
+            const page = await pdf.getPage(i + 1);
+            const canvas = canvasRefs.current[i];
+            if (canvas) {
+              const viewPort = page.getViewport({ scale: 1.5 });
+              canvas.height = viewPort.height;
+              canvas.width = viewPort.width;
+            }
+          }),
+        );
+        setLoading(false);
+      }
+    };
+    initPages();
+  }, [pageIds, pdf]);
 
-  useEffect(() => {
-    const loadPdf = async () => {
-      logInfo('Loading PDF', outputFilePath);
-      const loadingTask = pdfjs.getDocument(outputData);
-      const pdf = await loadingTask.promise;
-      logInfo('PDF loaded');
-      setNumPages(pdf.numPages);
-      logInfo('Number of pages:', pdf.numPages);
-
-      for (let i = 1; i <= pdf.numPages; i++) {
+  const loadPages = useCallback(
+    async (pageIndex: number) => {
+      for (let i = pageIndex - 1; i <= pageIndex + 2; i++) {
+        if (i < 1 || i > numPages) {
+          continue;
+        }
         const page = await pdf.getPage(i);
         const viewport = page.getViewport({ scale: 1.5 });
         const canvas = canvasRefs.current[i - 1];
-        setPageIds((pagesIds) => ({ ...pagesIds, [i]: page.ref }));
 
-        if (canvas) {
+        if (canvas && !canvas.getAttribute('rendered')) {
+          console.log('Rendering page', i);
           const context = canvas.getContext('2d');
           canvas.height = viewport.height;
           canvas.width = viewport.width;
@@ -120,54 +156,47 @@ export default function PdfViewer(props: FileViewerProps) {
               linksRefs.current[i - 1].appendChild(link);
             }
           });
+          canvas.setAttribute('rendered', 'true');
+          console.log('Page rendered', i);
         }
-
-        setLoading(false);
       }
-    };
-    if (outputData) {
-      loadPdf();
-    }
-  }, [outputData]);
+    },
+    [pdf, numPages],
+  );
 
   useEffect(() => {
-    const loadPdfData = async () => {
-      logInfo('Loading PDF Data', outputFilePath);
-      const pdfData = await readFile(outputFilePath, true);
-      setOutputData(pdfData);
-    };
-    if (outputFilePath) {
-      loadPdfData();
+    console.log('Loading pages', currentPageInView);
+    if (pdf && !loading) {
+      loadPages(currentPageInView || 1);
     }
-  }, [outputFilePath]);
-
-  if (loading || !outputData) {
-    return (
-      <div className="w-full h-full flex items-center justify-center">
-        <div className="flex items-center justify-center h-full mt-20">
-          <div className="flex flex-col items-center gap-4">
-            <div className="loader"></div>
-            <div>Loading...</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  }, [pdf, currentPageInView, loading]);
 
   return (
-    <div className="flex flex-col items-center bg-muted/50">
-      <div style={{ position: 'relative', overflowY: 'auto', height: '100%' }}>
-        {Array.from({ length: numPages }, (_, i) => (
-          <div
-            id={`page-${pageIds[i + 1]?.num}-${pageIds[i + 1]?.gen}`}
-            key={i}
-            style={{ position: 'relative' }}
-            ref={(el) => (linksRefs.current[i] = el)}
-          >
-            <canvas ref={(el) => (canvasRefs.current[i] = el)} />
+    <>
+      {loading && (
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="flex items-center justify-center h-full mt-20">
+            <div className="flex flex-col items-center gap-4">
+              <div className="loader"></div>
+              <div>Loading...</div>
+            </div>
           </div>
-        ))}
+        </div>
+      )}
+      <div className="flex flex-col items-center bg-muted/50">
+        <div style={{ position: 'relative', overflowY: 'auto', height: '100%' }}>
+          {Array.from({ length: numPages }, (_, i) => (
+            <div
+              id={`page-${pageIds[i + 1]?.num}-${pageIds[i + 1]?.gen}`}
+              key={i}
+              style={{ position: 'relative' }}
+              ref={(el) => (linksRefs.current[i] = el)}
+            >
+              <canvas id={`${i}`} ref={(el) => (canvasRefs.current[i] = el)} className="page" />
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
