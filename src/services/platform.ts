@@ -87,7 +87,7 @@ export async function listFiles(dir: string): Promise<FileItem[]> {
     name: entries[i].name,
     type: m.isDirectory ? 'directory' : getType(entries[i].name),
     size: getSize(m.size),
-    modifiedDate: m.atime.toDateString(),
+    modifiedDate: m.atime.toLocaleString(),
   }));
 }
 
