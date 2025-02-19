@@ -7,20 +7,22 @@ import { RefProxy } from 'pdfjs-dist/types/src/display/api';
 import useAppLogger from '@/hooks/useAppLogger';
 import useCache from '@/hooks/useCache';
 import './index.css';
+import useScrollPosition from '@/hooks/useScrollPosition';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs`;
 
 type FileViewerProps = {
   file: string;
+  scrollableContainerRef?: React.RefObject<HTMLDivElement>;
 };
 
 export default function PdfViewer(props: FileViewerProps) {
+  const { file, scrollableContainerRef } = props;
   const { logInfo } = useAppLogger('pdf-viewer');
   const { getCachedFile, exists } = useCache();
   const [outputFilePath, setOutputFilePath] = useState<string | null>(null);
   const [outputData, setOutputData] = useState<ArrayBuffer | null>(null);
   const [loading, setLoading] = useState(true);
-  const { file } = props;
   const currentProcessedFile = useRef<string | null>(null);
   const [numPages, setNumPages] = useState(0);
   const linksRefs = useRef([]);

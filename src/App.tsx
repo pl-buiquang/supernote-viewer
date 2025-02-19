@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 
 export default function App() {
   const [initialFile, setInitialFile] = useState<string | null>(null);
+
   useIsMobile();
 
   useEffect(() => {

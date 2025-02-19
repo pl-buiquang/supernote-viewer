@@ -22,6 +22,7 @@ type AppStore = {
   currentFile: string | null;
   cache: Record<string, any>;
   fileCacheInfo: Record<string, NotePageCache>;
+  fileScrollPosition: Record<string, number>;
 };
 
 // create a react context to use the store
@@ -30,6 +31,7 @@ interface StoreContextType {
   setStoreValue: (key: string, value: any) => Promise<void>;
   updateCache: (key: string, value: any) => Promise<void>;
   updateFileCacheInfo: (key: string, value: any) => Promise<void>;
+  updateFileScrollPosition: (key: string, value: number) => Promise<void>;
   removeData: (key: string) => Promise<void>;
 }
 
@@ -55,6 +57,7 @@ export const StoreProvider: React.FC<React.PropsWithChildren<StoreProviderProps>
     currentPath: [],
     currentFile: null,
     fileCacheInfo: {},
+    fileScrollPosition: {},
   });
   const [tauriStore, setTauriStore] = useState<Store | null>(null);
 
@@ -71,9 +74,10 @@ export const StoreProvider: React.FC<React.PropsWithChildren<StoreProviderProps>
 
   useEffect(() => {
     const initializeStore = async () => {
-      const loadedStore = await loadData(['baseFolder', 'cache', 'fileCacheInfo']);
+      const loadedStore = await loadData(['baseFolder', 'cache', 'fileCacheInfo', 'fileScrollPosition']);
       loadedStore['cache'] = loadedStore['cache'] || {};
       loadedStore['fileCacheInfo'] = loadedStore['fileCacheInfo'] || {};
+      loadedStore['fileScrollPosition'] = loadedStore['fileScrollPosition'] || {};
       console.log('Loaded store', loadedStore);
       setStoreState((prevState) => ({ ...prevState, ...loadedStore }));
     };
@@ -115,6 +119,13 @@ export const StoreProvider: React.FC<React.PropsWithChildren<StoreProviderProps>
     setStoreState((prevState) => ({ ...prevState, fileCacheInfo: { ...prevState.fileCacheInfo, [key]: value } }));
   };
 
+  const updateFileScrollPosition = async (key: string, value: number) => {
+    setStoreState((prevState) => ({
+      ...prevState,
+      fileScrollPosition: { ...prevState.fileScrollPosition, [key]: value },
+    }));
+  };
+
   // Remove Data
   const removeData = async (key: string) => {
     if (tauriStore) {
@@ -124,7 +135,16 @@ export const StoreProvider: React.FC<React.PropsWithChildren<StoreProviderProps>
   };
 
   return (
-    <StoreContext.Provider value={{ store: storeState, setStoreValue, removeData, updateCache, updateFileCacheInfo }}>
+    <StoreContext.Provider
+      value={{
+        store: storeState,
+        setStoreValue,
+        removeData,
+        updateCache,
+        updateFileCacheInfo,
+        updateFileScrollPosition,
+      }}
+    >
       {children}
     </StoreContext.Provider>
   );

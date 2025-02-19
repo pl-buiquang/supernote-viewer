@@ -1,15 +1,18 @@
 import { useEffect, useRef } from 'react';
 import useNoteView from '@/hooks/useNoteView';
 import './index.css';
+import useScrollPosition from '@/hooks/useScrollPosition';
 
 type FileViewerProps = {
   file: string;
+  scrollableContainerRef?: React.RefObject<HTMLDivElement>;
 };
 
 export default function NoteViewer(props: FileViewerProps) {
-  const { file } = props;
+  const { file, scrollableContainerRef } = props;
   const currentFile = useRef<string>(null);
   const { images, setNotePath } = useNoteView();
+  useScrollPosition({ scrollableContainerRef, file, data: images });
 
   useEffect(() => {
     if (currentFile.current !== file) {

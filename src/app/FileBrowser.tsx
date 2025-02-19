@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import FileViewer from '../components/FileViewer';
 import { File, FileText, Folder, MoreVertical, HelpCircle } from 'lucide-react';
 import {
@@ -34,6 +34,7 @@ export default function FileBrowser() {
   const { store, setStoreValue } = useStore();
   const { deleteCache } = useCache();
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>();
 
   useEffect(() => {
     (async () => {
@@ -81,10 +82,10 @@ export default function FileBrowser() {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4" ref={containerRef}>
       {store.currentFile ? (
         <div className="min-h-[100vh] flex-1 md:min-h-min md:flex md:justify-center md:items-center">
-          {store.currentFile && <FileViewer file={store.currentFile} />}
+          {store.currentFile && <FileViewer file={store.currentFile} scrollableContainerRef={containerRef} />}
         </div>
       ) : (
         <table className="w-full border-collapse">
