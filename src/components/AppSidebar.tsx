@@ -17,17 +17,38 @@ import {
 import { useStore } from '@/store';
 import FilePicker from './FilePicker';
 import { Link } from 'react-router-dom';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from './ui/alert-dialog';
+import useCache from '@/hooks/useCache';
+import { useState } from 'react';
 
 export type AppSidebarProps = {} & React.ComponentProps<typeof Sidebar>;
 
 export default function AppSidebar({ ...props }: AppSidebarProps) {
   const { setStoreValue } = useStore();
+  const { clearCache } = useCache();
+  const [clearCacheModalOpen, setClearCacheModalOpen] = useState(false);
+
   const handleChooseFolder = async (file: string) => {
     await setStoreValue('baseFolder', file);
   };
 
   const handleChooseFile = async (file: string) => {
     await setStoreValue('currentFile', file);
+  };
+
+  const handleClearCache = async () => {
+    await clearCache();
+    setClearCacheModalOpen(false);
   };
 
   return (
@@ -65,6 +86,37 @@ export default function AppSidebar({ ...props }: AppSidebarProps) {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem key="clear-cache">
+            <React.Fragment>
+              <SidebarMenuButton asChild>
+                <button
+                  onClick={() => setClearCacheModalOpen(true)}
+                  className="w-full text-left bg-red-50 hover:bg-red-100 px-2 py-2 rounded"
+                >
+                  Clear Cache
+                </button>
+              </SidebarMenuButton>
+              <AlertDialog open={clearCacheModalOpen}>
+                <AlertDialogTrigger asChild>
+                  <span className="hidden" />
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will clear all cached data. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setClearCacheModalOpen(false)}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearCache} className="bg-red-500 hover:bg-red-600">
+                      Clear Cache
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </React.Fragment>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link to="/logs">

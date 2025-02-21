@@ -2,10 +2,12 @@ import { useStore } from '@/store';
 import { v4 as uuidv4 } from 'uuid';
 import { createDir, deleteFile, exists as fileExists } from '@/services/platform';
 import { useEffect } from 'react';
+import useAppLogger from './useAppLogger';
 
 const CACHE_DIR = 'cache';
 
 const useCache = () => {
+  const { logInfo } = useAppLogger('cache');
   const { store, updateCache, updateFileCacheInfo } = useStore();
 
   useEffect(() => {
@@ -22,7 +24,7 @@ const useCache = () => {
     if (!store.cache[filepath]) {
       const uuid = uuidv4();
       const cachePath = `${CACHE_DIR}/${uuid}`;
-      console.log('Caching file', filepath, 'to', cachePath);
+      logInfo('Caching file', filepath, 'to', cachePath);
       await updateCache(filepath, cachePath);
       return cachePath;
     } else {
@@ -31,17 +33,17 @@ const useCache = () => {
   };
 
   const exists = async (filepath: string) => {
-    console.log('Checking if file exists in cache', filepath);
+    logInfo('Checking if file exists in cache', filepath);
     const cachedPath = store.cache[filepath];
     if (!cachedPath) return false;
     return await fileExists(cachedPath, true);
   };
 
   const deleteCache = async (filepath: string) => {
-    console.log('Deleting cache for', filepath);
+    logInfo('Deleting cache for', filepath);
     const cachedPath = store.cache[filepath];
     if (cachedPath) {
-      console.log('Deleting file cache for', filepath);
+      logInfo('Deleting file cache for', filepath);
       await deleteFile(cachedPath, true);
       await updateCache(filepath, null);
     }
@@ -52,19 +54,29 @@ const useCache = () => {
         for (const page of pages) {
           const imageCachePath = filepath + page.pageNumber;
           const cachedImagePath = store.cache[imageCachePath];
-          console.log('Deleting file cache for', imageCachePath);
+          logInfo('Deleting file cache for', imageCachePath);
           if (cachedImagePath) {
             await deleteFile(cachedImagePath, true);
             await updateCache(imageCachePath, null);
           }
         }
       }
-      console.log('Deleting cache info for', filepath);
+      logInfo('Deleting cache info for', filepath);
       await updateFileCacheInfo(filepath, null);
     }
   };
 
-  return { getCachedFile, exists, deleteCache };
+  const clearCache = async () => {
+    logInfo('Clearing cache');
+    for (const key in store.cache) {
+      await deleteCache(key);
+    }
+    for (const key in store.fileCacheInfo) {
+      await deleteCache(key);
+    }
+  };
+
+  return { getCachedFile, exists, deleteCache, clearCache };
 };
 
 export default useCache;
