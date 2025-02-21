@@ -19,6 +19,7 @@ export type NotePageCache = {
 type AppStore = {
   loaded: boolean;
   sideBarOpen: boolean;
+  fileBrowserSortConfig: { key: string; direction: 'asc' | 'desc' };
   baseFolder: string | null;
   currentPath: string[];
   currentFile: string | null;
@@ -57,6 +58,7 @@ export const StoreProvider: React.FC<React.PropsWithChildren<StoreProviderProps>
   const [storeState, setStoreState] = useState<AppStore>({
     loaded: false,
     sideBarOpen: true,
+    fileBrowserSortConfig: { key: 'name', direction: 'asc' },
     baseFolder: null,
     cache: {},
     currentPath: [],
@@ -79,11 +81,22 @@ export const StoreProvider: React.FC<React.PropsWithChildren<StoreProviderProps>
 
   useEffect(() => {
     const initializeStore = async () => {
-      const loadedStore = await loadData(['baseFolder', 'cache', 'fileCacheInfo', 'fileScrollPosition', 'sideBarOpen']);
+      const loadedStore = await loadData([
+        'baseFolder',
+        'cache',
+        'fileCacheInfo',
+        'fileScrollPosition',
+        'sideBarOpen',
+        'fileBrowserSortConfig',
+      ]);
       loadedStore['cache'] = loadedStore['cache'] || {};
       loadedStore['fileCacheInfo'] = loadedStore['fileCacheInfo'] || {};
       loadedStore['fileScrollPosition'] = loadedStore['fileScrollPosition'] || {};
       loadedStore['sideBarOpen'] = loadedStore['sideBarOpen'] ?? true;
+      loadedStore['fileBrowserSortConfig'] = loadedStore['fileBrowserSortConfig'] || {
+        key: 'name',
+        direction: 'asc',
+      };
       console.log('Loaded store', loadedStore);
       setStoreState((prevState) => ({ ...prevState, ...loadedStore, loaded: true }));
     };

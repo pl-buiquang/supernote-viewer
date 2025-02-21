@@ -1,7 +1,7 @@
 import type React from 'react';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/store';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import FileViewer from '../components/FileViewer';
 import { File, FileText, Folder, MoreVertical, HelpCircle } from 'lucide-react';
 import {
@@ -35,6 +35,22 @@ export default function FileBrowser() {
   const { deleteCache } = useCache();
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>();
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>(store.fileBrowserSortConfig);
+
+  const sortFiles = useCallback(
+    (files: FileItem[]) => {
+      return files.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        } else {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+      });
+    },
+    [sortConfig],
+  );
+
+  console.log(sortConfig);
 
   useEffect(() => {
     (async () => {
@@ -46,6 +62,12 @@ export default function FileBrowser() {
       });
     })();
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      await setStoreValue('fileBrowserSortConfig', sortConfig);
+    })();
+  }, [sortConfig]);
 
   useEffect(() => {
     (async () => {
@@ -91,14 +113,44 @@ export default function FileBrowser() {
         <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-100">
-              <th className="p-2 text-left">Name</th>
-              <th className="p-2 text-left">Size</th>
-              <th className="p-2 text-left">Modified</th>
+              <th
+                className="p-2 text-left cursor-pointer hover:bg-gray-200"
+                onClick={() =>
+                  setSortConfig({
+                    key: 'name',
+                    direction: sortConfig.key === 'name' && sortConfig.direction === 'asc' ? 'desc' : 'asc',
+                  })
+                }
+              >
+                Name {sortConfig.key === 'name' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </th>
+              <th
+                className="p-2 text-left cursor-pointer hover:bg-gray-200"
+                onClick={() =>
+                  setSortConfig({
+                    key: 'byteSize',
+                    direction: sortConfig.key === 'byteSize' && sortConfig.direction === 'asc' ? 'desc' : 'asc',
+                  })
+                }
+              >
+                Size {sortConfig.key === 'byteSize' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </th>
+              <th
+                className="p-2 text-left cursor-pointer hover:bg-gray-200"
+                onClick={() =>
+                  setSortConfig({
+                    key: 'modifiedDate',
+                    direction: sortConfig.key === 'modifiedDate' && sortConfig.direction === 'asc' ? 'desc' : 'asc',
+                  })
+                }
+              >
+                Modified {sortConfig.key === 'modifiedDate' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
+              </th>
               <th className="p-2 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {files.map((file) => (
+            {sortFiles(files).map((file) => (
               <tr key={file.id} className="border-b hover:bg-gray-50">
                 <td className="p-2">
                   <div className="flex items-center space-x-2">

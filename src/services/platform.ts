@@ -62,6 +62,7 @@ export interface FileItem {
   name: string;
   type: FileType;
   size: string;
+  byteSize: number;
   modifiedDate: string;
 }
 
@@ -87,6 +88,7 @@ export async function listFiles(dir: string): Promise<FileItem[]> {
     name: entries[i].name,
     type: m.isDirectory ? 'directory' : getType(entries[i].name),
     size: getSize(m.size),
+    byteSize: m.size,
     modifiedDate: m.atime.toLocaleString(),
   }));
 }
