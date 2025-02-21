@@ -2,6 +2,7 @@ import Worker from '@/workers/noteToImage.worker?worker';
 import { SupernoteWorkerMessage, SupernoteWorkerResponse } from '@/workers/noteToImage.worker';
 import { Image } from 'image-js';
 import { SupernoteX } from 'supernote-typescript';
+import { Logger } from '@/hooks/useAppLogger';
 
 function dataUrlToBuffer(dataUrl: string): ArrayBuffer {
   // Remove data URL prefix (e.g., "data:image/png;base64,")
@@ -19,9 +20,14 @@ function dataUrlToBuffer(dataUrl: string): ArrayBuffer {
 
 class WorkerPool {
   private workers: Worker[];
+  private logger: Logger;
 
-  constructor(private maxWorkers: number = navigator.hardwareConcurrency) {
-    console.log(`Creating worker pool with ${maxWorkers} workers`);
+  constructor(
+    logger: Logger,
+    private maxWorkers: number = navigator.hardwareConcurrency,
+  ) {
+    this.logger = logger;
+    this.logger.logInfo(`Creating worker pool with ${maxWorkers} workers`);
     this.workers = Array(maxWorkers)
       .fill(null)
       .map(() => new Worker());
@@ -33,7 +39,7 @@ class WorkerPool {
 
       worker.onmessage = (e: MessageEvent<SupernoteWorkerResponse>) => {
         const duration = Date.now() - startTime;
-        console.log(`Processed pages ${pageNumbers.join(',')} in ${duration}ms`);
+        this.logger.logInfo(`Processed pages ${pageNumbers.join(',')} in ${duration}ms`);
 
         if (e.data.error) {
           reject(new Error(e.data.error));
@@ -43,7 +49,7 @@ class WorkerPool {
       };
 
       worker.onerror = (error) => {
-        console.error('Worker error:', error);
+        this.logger.logError('Worker error:', error);
         reject(error);
       };
 
@@ -68,7 +74,7 @@ class WorkerPool {
       chunks.push(allPageNumbers.slice(i, i + chunkSize));
     }
 
-    //console.log(`Processing ${allPageNumbers.length} pages in ${chunks.length} chunks`);
+    //this.logInfo(`Processing ${allPageNumbers.length} pages in ${chunks.length} chunks`);
 
     // Process chunks in parallel using available workers
     const results = await Promise.all(
@@ -87,10 +93,12 @@ class WorkerPool {
 
 class ImageConverter {
   private workerPool: WorkerPool;
+  private logger: Logger;
 
-  constructor(maxWorkers = navigator.hardwareConcurrency) {
+  constructor(logger: Logger, maxWorkers = navigator.hardwareConcurrency) {
     // Default to 4 workers
-    this.workerPool = new WorkerPool(maxWorkers);
+    this.logger = logger;
+    this.workerPool = new WorkerPool(this.logger, maxWorkers);
   }
 
   async convertToImages(note: SupernoteX, pageNumbers?: number[]): Promise<string[]> {
@@ -104,10 +112,10 @@ class ImageConverter {
   }
 }
 
-export const extractImages = async (note: SupernoteX, pages: number[]): Promise<Image[]> => {
+export const extractImages = async (note: SupernoteX, pages: number[], logger: Logger): Promise<Image[]> => {
   let images: string[] = [];
 
-  const converter = new ImageConverter();
+  const converter = new ImageConverter(logger);
   try {
     images = await converter.convertToImages(note, pages);
   } finally {

@@ -1,45 +1,54 @@
-import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import useAppLogger from '@/hooks/useAppLogger';
-import { Link } from 'react-router-dom';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-export default function LogViewer() {
+type LogViewerProps = {
+  open: boolean;
+  onClose: () => void;
+};
+
+export default function LogViewer(props: LogViewerProps) {
+  const { open, onClose } = props;
   const { logs } = useAppLogger();
+
+  if (!open) {
+    return null;
+  }
+
   return (
-    <div className="flex flex-col flex-1 p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Log Viewer</h1>
-        <Link to="/">
-          <Button variant="outline">Back to Main App</Button>
-        </Link>
-      </div>
-      <div className="flex flex-1">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Timestamp</TableHead>
-              <TableHead>Level</TableHead>
-              <TableHead>Component</TableHead>
-              <TableHead>Message</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {logs.map((log, index) => (
-              <TableRow key={index}>
-                <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
-                <TableCell>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelClass(log.level)}`}>
-                    {log.level}
-                  </span>
-                </TableCell>
-                <TableCell>{log.component}</TableCell>
-                <TableCell className="break-words max-w-xs">{log.message}</TableCell>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-[95vw] max-h-[90vh] w-full overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Log Viewer</DialogTitle>
+        </DialogHeader>
+        <div className="relative flex-1 w-full overflow-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-white z-10">
+              <TableRow>
+                <TableHead>Timestamp</TableHead>
+                <TableHead>Level</TableHead>
+                <TableHead>Component</TableHead>
+                <TableHead>Message</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
+            </TableHeader>
+            <TableBody>
+              {[...logs].reverse().map((log, index) => (
+                <TableRow key={index}>
+                  <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelClass(log.level)}`}>
+                      {log.level}
+                    </span>
+                  </TableCell>
+                  <TableCell>{log.component}</TableCell>
+                  <TableCell className="break-words max-w-xs">{log.message}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

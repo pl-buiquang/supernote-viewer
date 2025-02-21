@@ -15,9 +15,10 @@ const useScrollPosition = (props: UseScrollPositionProps) => {
   const [currentPageInView, setCurrentPageInView] = useState<number>(null);
 
   const getViewableElements = () => {
-    if (!scrollableContainerRef.current?.parentElement) return;
+    if (!scrollableContainerRef?.current?.parentElement) return;
 
-    const container = scrollableContainerRef.current?.parentElement;
+    const container = scrollableContainerRef?.current?.parentElement;
+    if (!container) return [];
     const containerRect = container.getBoundingClientRect();
     const items = Array.from(container.getElementsByClassName('page'));
 
@@ -42,12 +43,9 @@ const useScrollPosition = (props: UseScrollPositionProps) => {
   };
 
   useEffect(() => {
-    if (scrollableContainerRef.current && loaded) {
+    if (scrollableContainerRef?.current?.parentElement && loaded) {
       if (initLastScrollPosition && lastScrollPosition) {
-        if (scrollableContainerRef.current && lastScrollPosition) {
-          console.log('Setting scroll position', lastScrollPosition);
-          scrollableContainerRef.current.parentElement.scrollTop = lastScrollPosition;
-        }
+        scrollableContainerRef.current.parentElement.scrollTop = lastScrollPosition;
       }
       const handleScroll = () => {
         updateLastViewedPageNumber();

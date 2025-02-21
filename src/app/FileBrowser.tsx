@@ -10,10 +10,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { FileItem, FileType, listFiles } from '@/services/platform';
 import useCache from '@/hooks/useCache';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import useAppLogger from '@/hooks/useAppLogger';
+import { FileItem, FileType } from '@/types';
+import usePlatform from '@/hooks/usePlatform';
 
 const FileIcon: React.FC<{ type: FileType }> = ({ type }) => {
   switch (type) {
@@ -32,6 +33,7 @@ export default function FileBrowser() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const { logInfo } = useAppLogger('file-browser');
   const { store, setStoreValue } = useStore();
+  const platform = usePlatform();
   const { deleteCache } = useCache();
   const [currentFolder, setCurrentFolder] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>();
@@ -50,12 +52,10 @@ export default function FileBrowser() {
     [sortConfig],
   );
 
-  console.log(sortConfig);
-
   useEffect(() => {
     (async () => {
       await onOpenUrl((urls) => {
-        console.log('Received deep link urls', urls);
+        logInfo('Received deep link urls', urls);
         if (urls.length > 0) {
           setStoreValue('currentFile', urls[0]);
         }
@@ -84,7 +84,7 @@ export default function FileBrowser() {
     (async () => {
       logInfo('Listing files from', currentFolder);
       if (!currentFolder) return;
-      const files = await listFiles(currentFolder);
+      const files = await platform.listFiles(currentFolder);
       setFiles(files);
     })();
   }, [currentFolder]);

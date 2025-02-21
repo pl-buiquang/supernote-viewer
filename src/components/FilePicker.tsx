@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { isMobile, openDir, openFile } from '@/services/platform';
+import usePlatform from '@/hooks/usePlatform';
 
 type FilePickerProps = {
   onFilePick: (file: string) => Promise<void>;
@@ -20,6 +20,7 @@ type FilePickerProps = {
 export default function FilePicker(props: FilePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const platform = usePlatform();
   const { onFilePick, isFolder } = props;
   const buttonTitle = isFolder ? 'Choose Folder' : 'Open File';
 
@@ -35,11 +36,11 @@ export default function FilePicker(props: FilePickerProps) {
   };
 
   const handleNativeChooseFile = async () => {
-    const file = await (isFolder ? openDir() : openFile());
+    const file = await (isFolder ? platform.openDir() : platform.openFile());
     await onFilePick(file);
   };
 
-  if (!isMobile || !isFolder) {
+  if (!platform.isMobile || !isFolder) {
     // if (!withTauri) {
     //   return (
     //     <input

@@ -1,7 +1,6 @@
 /* eslint-disable react/react-in-jsx-scope */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { exportPdfTo } from '../../services/pdfViewer';
-import { readFile } from '@/services/platform';
 import * as pdfjs from 'pdfjs-dist';
 import { RefProxy } from 'pdfjs-dist/types/src/display/api';
 import useAppLogger from '@/hooks/useAppLogger';
@@ -9,6 +8,7 @@ import useCache from '@/hooks/useCache';
 import './index.css';
 import useScrollPosition from '@/hooks/useScrollPosition';
 import { useStore } from '@/store';
+import usePlatform from '@/hooks/usePlatform';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs`;
 
@@ -19,7 +19,8 @@ type FileViewerProps = {
 
 export default function PdfViewer(props: FileViewerProps) {
   const { file, scrollableContainerRef } = props;
-  const { logInfo } = useAppLogger('pdf-viewer');
+  const { logInfo, logWarn, logDebug, logError } = useAppLogger('pdf-viewer');
+  const platform = usePlatform();
   const { getCachedFile, exists } = useCache();
   const { store } = useStore();
   const [pdf, setPdf] = useState<pdfjs.PDFDocumentProxy | null>(null);
@@ -34,7 +35,6 @@ export default function PdfViewer(props: FileViewerProps) {
 
   useEffect(() => {
     if (lastViewedPage && !loading) {
-      console.log('Scrolling to page', lastViewedPage);
       const img = canvasRefs.current[lastViewedPage];
       if (img) {
         loadPages(lastViewedPage);
@@ -57,16 +57,20 @@ export default function PdfViewer(props: FileViewerProps) {
         const sourceFile = previousExportExists ? outputFilename : file;
         logInfo('Source file:' + sourceFile);
         const outputFilePath = await exportPdfTo(
+          platform,
           sourceFile,
           markFilepath,
           outputFilename,
           previousExportExists,
-          (msg: string) => {
-            logInfo(msg);
+          {
+            logInfo,
+            logWarn,
+            logDebug,
+            logError,
           },
         );
         logInfo('Loading PDF Data', outputFilePath);
-        const pdfData = await readFile(outputFilePath, true);
+        const pdfData = await platform.readFile(outputFilePath, true);
         logInfo('Loading PDF', outputFilePath);
         const loadingTask = pdfjs.getDocument(pdfData);
         const pdf = await loadingTask.promise;
@@ -89,7 +93,7 @@ export default function PdfViewer(props: FileViewerProps) {
   useEffect(() => {
     const initPages = async () => {
       if (pdf && Object.keys(pageIds).length > 0) {
-        console.log('Initializing pages', pageIds);
+        logInfo('Initializing pages', pageIds);
         await Promise.all(
           Array.from({ length: pdf.numPages }, async (_, i) => {
             const page = await pdf.getPage(i + 1);
@@ -118,7 +122,7 @@ export default function PdfViewer(props: FileViewerProps) {
         const canvas = canvasRefs.current[i - 1];
 
         if (canvas && !canvas.getAttribute('rendered')) {
-          console.log('Rendering page', i);
+          logInfo('Rendering page', i);
           const context = canvas.getContext('2d');
           canvas.height = viewport.height;
           canvas.width = viewport.width;
@@ -158,7 +162,7 @@ export default function PdfViewer(props: FileViewerProps) {
             }
           });
           canvas.setAttribute('rendered', 'true');
-          console.log('Page rendered', i);
+          logInfo('Page rendered', i);
         }
       }
     },
@@ -166,7 +170,7 @@ export default function PdfViewer(props: FileViewerProps) {
   );
 
   useEffect(() => {
-    console.log('Loading pages', currentPageInView);
+    logInfo('Loading pages', currentPageInView);
     if (pdf && !loading) {
       loadPages(currentPageInView || 1);
     }

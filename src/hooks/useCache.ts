@@ -1,20 +1,21 @@
 import { useStore } from '@/store';
 import { v4 as uuidv4 } from 'uuid';
-import { createDir, deleteFile, exists as fileExists } from '@/services/platform';
 import { useEffect } from 'react';
 import useAppLogger from './useAppLogger';
+import usePlatform from './usePlatform';
 
 const CACHE_DIR = 'cache';
 
 const useCache = () => {
   const { logInfo } = useAppLogger('cache');
   const { store, updateCache, updateFileCacheInfo } = useStore();
+  const platform = usePlatform();
 
   useEffect(() => {
     const initAppCacheDir = async () => {
-      const cacheDirExist = await fileExists(CACHE_DIR, true);
+      const cacheDirExist = await platform.exists(CACHE_DIR, true);
       if (!cacheDirExist) {
-        await createDir(CACHE_DIR);
+        await platform.createDir(CACHE_DIR);
       }
     };
     initAppCacheDir();
@@ -36,7 +37,7 @@ const useCache = () => {
     logInfo('Checking if file exists in cache', filepath);
     const cachedPath = store.cache[filepath];
     if (!cachedPath) return false;
-    return await fileExists(cachedPath, true);
+    return await platform.exists(cachedPath, true);
   };
 
   const deleteCache = async (filepath: string) => {
@@ -44,7 +45,7 @@ const useCache = () => {
     const cachedPath = store.cache[filepath];
     if (cachedPath) {
       logInfo('Deleting file cache for', filepath);
-      await deleteFile(cachedPath, true);
+      await platform.deleteFile(cachedPath, true);
       await updateCache(filepath, null);
     }
     const fileCacheInfo = store.fileCacheInfo[filepath];
@@ -56,7 +57,7 @@ const useCache = () => {
           const cachedImagePath = store.cache[imageCachePath];
           logInfo('Deleting file cache for', imageCachePath);
           if (cachedImagePath) {
-            await deleteFile(cachedImagePath, true);
+            await platform.deleteFile(cachedImagePath, true);
             await updateCache(imageCachePath, null);
           }
         }

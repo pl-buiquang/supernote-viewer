@@ -1,6 +1,6 @@
 import { createContext, useState, ReactNode } from 'react';
 
-type LogMessage = {
+export type LogMessage = {
   message: string;
   timestamp: string;
   component: string;

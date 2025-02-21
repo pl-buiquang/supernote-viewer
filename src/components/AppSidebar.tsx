@@ -16,7 +16,6 @@ import {
 
 import { useStore } from '@/store';
 import FilePicker from './FilePicker';
-import { Link } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,9 +30,12 @@ import {
 import useCache from '@/hooks/useCache';
 import { useState } from 'react';
 
-export type AppSidebarProps = {} & React.ComponentProps<typeof Sidebar>;
+export type AppSidebarProps = {
+  openLogs: () => void;
+} & React.ComponentProps<typeof Sidebar>;
 
 export default function AppSidebar({ ...props }: AppSidebarProps) {
+  const { openLogs } = props;
   const { setStoreValue } = useStore();
   const { clearCache } = useCache();
   const [clearCacheModalOpen, setClearCacheModalOpen] = useState(false);
@@ -91,7 +93,7 @@ export default function AppSidebar({ ...props }: AppSidebarProps) {
               <SidebarMenuButton asChild>
                 <button
                   onClick={() => setClearCacheModalOpen(true)}
-                  className="w-full text-left bg-red-50 hover:bg-red-100 px-2 py-2 rounded"
+                  className="w-full text-left hover:bg-red-300 px-2 py-2 rounded"
                 >
                   Clear Cache
                 </button>
@@ -119,12 +121,13 @@ export default function AppSidebar({ ...props }: AppSidebarProps) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link to="/logs">
-                <span className="text-sm text-gray-500">Logs</span>
-              </Link>
+              <button onClick={() => openLogs()} className="text-sm text-gray-500">
+                Logs
+              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
+            <div className="border-t border-gray-200 my-2" />
             <p className="text-sm text-gray-500">
               Version : {__APP_VERSION__}-{__GIT_COMMIT__}
             </p>

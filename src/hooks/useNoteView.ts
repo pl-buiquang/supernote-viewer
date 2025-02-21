@@ -2,13 +2,14 @@ import { exportNote } from '@/services/noteViewer';
 import { useStore } from '@/store';
 import { useEffect, useState } from 'react';
 import useCache from './useCache';
-import { readFile, writeFile } from '@/services/platform';
 import useAppLogger from './useAppLogger';
 import { SupernoteX } from 'supernote-typescript';
+import usePlatform from './usePlatform';
 
 export default function useNoteView() {
   const { store, updateFileCacheInfo } = useStore();
-  const { logInfo } = useAppLogger('note-viewer');
+  const { logInfo, logWarn, logDebug, logError } = useAppLogger('note-viewer');
+  const platform = usePlatform();
   const { getCachedFile } = useCache();
   const [notePath, setNotePath] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>(null);
@@ -33,9 +34,12 @@ export default function useNoteView() {
         logInfo('Extracting note', notePath);
         const previousExtractInfo = store.fileCacheInfo[notePath];
         logInfo('Previous extract info', previousExtractInfo);
-        const { note, images, extractInfo } = await exportNote(notePath, previousExtractInfo, (msg: string) =>
-          logInfo(msg),
-        );
+        const { note, images, extractInfo } = await exportNote(platform, notePath, previousExtractInfo, {
+          logInfo,
+          logWarn,
+          logDebug,
+          logError,
+        });
         await updateFileCacheInfo(notePath, {
           pages: extractInfo.map((info) => ({
             index: info.index,
@@ -51,10 +55,10 @@ export default function useNoteView() {
             const cachePath = await getCachedFile(imageCachePath);
             if (page.imageIndex !== undefined) {
               const image = images[page.imageIndex];
-              await writeFile(cachePath, image.toBuffer());
+              await platform.writeFile(cachePath, image.toBuffer());
               return image.toDataURL();
             } else {
-              const image = await readFile(cachePath, true);
+              const image = await platform.readFile(cachePath, true);
               return await arrayBufferToDataUrl(image);
             }
           }),

@@ -1,19 +1,21 @@
-import { readFile } from '@/services/platform';
 import { SupernoteX } from 'supernote-typescript';
 import { Image } from 'image-js';
 import { NotePageCache, NotePageExtractInfo } from '@/store';
 import { extractImages } from './imageExtractor';
+import { Platform } from './platform';
+import { Logger } from '@/hooks/useAppLogger';
 
 export async function exportNote(
+  platform: Platform,
   notePath: string,
-  previousExtractInfo?: NotePageCache,
-  logger: (msg: string) => void = console.log,
+  previousExtractInfo: NotePageCache | undefined,
+  logger: Logger,
 ): Promise<{
   note: SupernoteX;
   images: Image[];
   extractInfo: NotePageExtractInfo<{ imageIndex?: number }>[];
 }> {
-  const noteData = await readFile(notePath);
+  const noteData = await platform.readFile(notePath);
   const note = new SupernoteX(new Uint8Array(noteData));
   const markedPdfPageNumbers = Object.keys(note.footer.PAGE);
 
@@ -36,9 +38,9 @@ export async function exportNote(
   const pagesToExtract = Array.from({ length: numPages }, (_, i) => i + 1).filter((page) =>
     updateOrNewPagesIndexes.includes(page - 1),
   );
-  logger(`Extracting pages ${pagesToExtract} from the mark file...`);
-  const markImages = await extractImages(note, pagesToExtract);
-  logger(`Extracted ${pagesToExtract.length} pages from the mark file.`);
+  logger.logInfo(`Extracting pages ${pagesToExtract} from the mark file...`);
+  const markImages = await extractImages(note, pagesToExtract, logger);
+  logger.logInfo(`Extracted ${pagesToExtract.length} pages from the mark file.`);
 
   const updatedMarkInfo = jsonMarkInfo.map((page) => {
     const info: NotePageExtractInfo<{ imageIndex?: number }> = { ...page };

@@ -11,92 +11,75 @@ import {
 } from '@tauri-apps/plugin-fs';
 import { open } from '@tauri-apps/plugin-dialog';
 import { platform } from '@tauri-apps/plugin-os';
+import { FileItem, getFileType } from '@/types';
+import { byteSizeToString } from './utils';
+import { Logger } from '@/hooks/useAppLogger';
 // when using `"withGlobalTauri": true`, you may use
 // const { platform } = window.__TAURI__.os;
 
 export const withTauri = !!(window as any).__TAURI__;
 
-// Detect Platform
-export const isMobile = withTauri && (platform() === 'android' || platform() === 'ios');
+export class Platform {
+  private logger: Logger;
+  public isMobile = withTauri && (platform() === 'android' || platform() === 'ios');
 
-// Read File
-export async function readFile(path: string, localAppData: boolean = false): Promise<ArrayBuffer> {
-  console.log('Tauri: Reading file ', path);
-  const options = localAppData ? { baseDir: BaseDirectory.AppLocalData } : {};
-  const fileData = await tauriReadFile(path, options);
-  return fileData.buffer;
-}
-
-// Write File
-export async function writeFile(path: string, data: Uint8Array) {
-  console.log('Tauri: Writing file ', path);
-  return await tauriWriteFile(path, data, { baseDir: BaseDirectory.AppLocalData });
-}
-
-export async function createDir(path: string) {
-  console.log('Tauri: Creating directory ', path);
-  return await mkdir(path, {
-    baseDir: BaseDirectory.AppLocalData,
-  });
-}
-
-export const exists = async (path: string, localAppData: boolean = false): Promise<boolean> => {
-  console.log('Tauri: Checking if file exists', path);
-  const options = localAppData ? { baseDir: BaseDirectory.AppLocalData } : {};
-  return await tauriExists(path, options);
-};
-
-export const deleteFile = async (path: string, localAppData: boolean = false) => {
-  console.log('Tauri: Deleting file', path);
-  const options = localAppData ? { baseDir: BaseDirectory.AppLocalData } : {};
-  const exists = await tauriExists(path, options);
-  if (exists) {
-    await tauriDeleteFile(path, options);
+  constructor(logger: Logger) {
+    this.logger = logger;
   }
-};
 
-export type FileType = 'pdf' | 'note' | 'directory' | 'unknown';
+  // Read File
+  async readFile(path: string, localAppData: boolean = false): Promise<ArrayBuffer> {
+    this.logger.logInfo('Tauri: Reading file ', path);
+    const options = localAppData ? { baseDir: BaseDirectory.AppLocalData } : {};
+    const fileData = await tauriReadFile(path, options);
+    return fileData.buffer;
+  }
 
-export interface FileItem {
-  id: string;
-  name: string;
-  type: FileType;
-  size: string;
-  byteSize: number;
-  modifiedDate: string;
-}
+  // Write File
+  async writeFile(path: string, data: Uint8Array) {
+    this.logger.logInfo('Tauri: Writing file ', path);
+    return await tauriWriteFile(path, data, { baseDir: BaseDirectory.AppLocalData });
+  }
 
-const getType = (file: string): FileType => {
-  const ext = file.split('.').pop();
-  if (ext === 'pdf') return 'pdf';
-  if (ext === 'note') return 'note';
-  return 'unknown';
-};
+  async createDir(path: string) {
+    this.logger.logInfo('Tauri: Creating directory ', path);
+    return await mkdir(path, {
+      baseDir: BaseDirectory.AppLocalData,
+    });
+  }
 
-const getSize = (bytes: number): string => {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-};
+  async exists(path: string, localAppData: boolean = false): Promise<boolean> {
+    this.logger.logInfo('Tauri: Checking if file exists', path);
+    const options = localAppData ? { baseDir: BaseDirectory.AppLocalData } : {};
+    return await tauriExists(path, options);
+  }
+  async deleteFile(path: string, localAppData: boolean = false) {
+    this.logger.logInfo('Tauri: Deleting file', path);
+    const options = localAppData ? { baseDir: BaseDirectory.AppLocalData } : {};
+    const exists = await tauriExists(path, options);
+    if (exists) {
+      await tauriDeleteFile(path, options);
+    }
+  }
+  async listFiles(dir: string): Promise<FileItem[]> {
+    this.logger.logInfo('Tauri: Listing files from', dir);
+    const entries = await readDir(dir, {});
+    const metadata = await Promise.all(entries.map((e) => stat(`${dir}/${e.name}`, {})));
+    return metadata.map((m, i) => ({
+      id: entries[i].name,
+      name: entries[i].name,
+      type: m.isDirectory ? 'directory' : getFileType(entries[i].name),
+      size: byteSizeToString(m.size),
+      byteSize: m.size,
+      modifiedDate: m.atime.toLocaleString(),
+    }));
+  }
 
-export async function listFiles(dir: string): Promise<FileItem[]> {
-  console.log('Tauri: Listing files from', dir);
-  const entries = await readDir(dir, {});
-  const metadata = await Promise.all(entries.map((e) => stat(`${dir}/${e.name}`, {})));
-  return metadata.map((m, i) => ({
-    id: entries[i].name,
-    name: entries[i].name,
-    type: m.isDirectory ? 'directory' : getType(entries[i].name),
-    size: getSize(m.size),
-    byteSize: m.size,
-    modifiedDate: m.atime.toLocaleString(),
-  }));
-}
+  async openFile(): Promise<string> {
+    return await open({ multiple: false, directory: false });
+  }
 
-export async function openFile(): Promise<string> {
-  return await open({ multiple: false, directory: false });
-}
-
-export async function openDir(): Promise<string> {
-  return await open({ multiple: false, directory: true });
+  async openDir(): Promise<string> {
+    return await open({ multiple: false, directory: true });
+  }
 }

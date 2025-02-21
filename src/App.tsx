@@ -10,9 +10,11 @@ import routes from './routes';
 import AppLoggerProvider from './components/AppLogger';
 import { getCurrent as getCurrentDeepLinkUrls } from '@tauri-apps/plugin-deep-link';
 import { useEffect, useState } from 'react';
+import LogViewer from './app/LogViewer';
 
 const AppWithStore = () => {
   const { store, setStoreValue } = useStore();
+  const [openLogs, setOpenLogs] = useState(false);
 
   if (store.loaded === false) {
     return null;
@@ -25,7 +27,7 @@ const AppWithStore = () => {
       onOpenChange={(open) => setStoreValue('sideBarOpen', open)}
     >
       <Router>
-        <AppSidebar />
+        <AppSidebar openLogs={() => setOpenLogs(true)} />
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
             <SidebarTrigger className="-ml-1" />
@@ -38,6 +40,7 @@ const AppWithStore = () => {
                 <Route key={route.path} path={route.path} element={route.component} />
               ))}
             </Routes>
+            <LogViewer open={openLogs} onClose={() => setOpenLogs(false)} />
           </div>
         </SidebarInset>
       </Router>
@@ -54,7 +57,6 @@ export default function App() {
     (async () => {
       const urls = await getCurrentDeepLinkUrls();
       if (urls?.length > 0) {
-        console.log('Started with deep link urls', urls);
         setInitialFile(urls[0]);
       }
     })();
