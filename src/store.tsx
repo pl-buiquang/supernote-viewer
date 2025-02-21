@@ -17,6 +17,8 @@ export type NotePageCache = {
 };
 
 type AppStore = {
+  loaded: boolean;
+  sideBarOpen: boolean;
   baseFolder: string | null;
   currentPath: string[];
   currentFile: string | null;
@@ -53,6 +55,8 @@ export const StoreProvider: React.FC<React.PropsWithChildren<StoreProviderProps>
   children,
 }: React.PropsWithChildren<StoreProviderProps>) => {
   const [storeState, setStoreState] = useState<AppStore>({
+    loaded: false,
+    sideBarOpen: true,
     baseFolder: null,
     cache: {},
     currentPath: [],
@@ -75,12 +79,13 @@ export const StoreProvider: React.FC<React.PropsWithChildren<StoreProviderProps>
 
   useEffect(() => {
     const initializeStore = async () => {
-      const loadedStore = await loadData(['baseFolder', 'cache', 'fileCacheInfo', 'fileScrollPosition']);
+      const loadedStore = await loadData(['baseFolder', 'cache', 'fileCacheInfo', 'fileScrollPosition', 'sideBarOpen']);
       loadedStore['cache'] = loadedStore['cache'] || {};
       loadedStore['fileCacheInfo'] = loadedStore['fileCacheInfo'] || {};
       loadedStore['fileScrollPosition'] = loadedStore['fileScrollPosition'] || {};
+      loadedStore['sideBarOpen'] = loadedStore['sideBarOpen'] ?? true;
       console.log('Loaded store', loadedStore);
-      setStoreState((prevState) => ({ ...prevState, ...loadedStore }));
+      setStoreState((prevState) => ({ ...prevState, ...loadedStore, loaded: true }));
     };
     initializeStore();
   }, []);
