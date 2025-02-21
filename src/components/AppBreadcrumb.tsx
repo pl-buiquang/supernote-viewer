@@ -19,7 +19,7 @@ export function AppBreadcrumb() {
   };
 
   const handlePathClick = async (index: number) => {
-    await setStoreValue('currentPath', currentPath.slice(0, index));
+    await setStoreValue('currentPath', currentPath.slice(0, index + 1));
     await setStoreValue('currentFile', null);
   };
 
@@ -36,7 +36,9 @@ export function AppBreadcrumb() {
             <BreadcrumbSeparator className="md:block" />
             <BreadcrumbItem>
               <BreadcrumbPage>
-                <BreadcrumbLink onClick={() => handlePathClick(i)}>{item}</BreadcrumbLink>
+                <BreadcrumbLink href="#" onClick={() => handlePathClick(i)}>
+                  {item}
+                </BreadcrumbLink>
               </BreadcrumbPage>
             </BreadcrumbItem>
           </>
