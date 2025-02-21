@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import useNoteView from '@/hooks/useNoteView';
-import './index.css';
+import '../index.css';
 import useScrollPosition from '@/hooks/useScrollPosition';
+import NoteMenu from './Menu';
 
 type FileViewerProps = {
   file: string;
@@ -11,7 +12,8 @@ type FileViewerProps = {
 export default function NoteViewer(props: FileViewerProps) {
   const { file, scrollableContainerRef } = props;
   const currentFile = useRef<string>(null);
-  const { images, setNotePath } = useNoteView();
+  const { note, images, setNotePath } = useNoteView();
+  const imageRefs = useRef<HTMLDivElement[]>([]);
   useScrollPosition({ scrollableContainerRef, file, loaded: !!images, initLastScrollPosition: true });
 
   useEffect(() => {
@@ -22,11 +24,24 @@ export default function NoteViewer(props: FileViewerProps) {
     }
   }, [file]);
 
+  const scrollToPage = useCallback((page: number) => {
+    const pageRef = imageRefs.current?.[page];
+    if (pageRef) {
+      pageRef.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
   if (images) {
     return (
       <>
+        <NoteMenu note={note} scrollToPage={scrollToPage} />
         {images.map((image, i) => (
-          <div id={`${i}`} key={i} className="bg-muted/50 flex justify-center items-center mb-6 page">
+          <div
+            id={`${i}`}
+            key={i}
+            className="bg-muted/50 flex justify-center items-center mb-6 page"
+            ref={(el) => (imageRefs.current[i] = el)}
+          >
             <img src={image} alt={`Page ${i}`} />
           </div>
         ))}

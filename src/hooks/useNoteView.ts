@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import useCache from './useCache';
 import { readFile, writeFile } from '@/services/platform';
 import useAppLogger from './useAppLogger';
+import { SupernoteX } from 'supernote-typescript';
 
 export default function useNoteView() {
   const { store, updateFileCacheInfo } = useStore();
@@ -11,6 +12,7 @@ export default function useNoteView() {
   const { getCachedFile } = useCache();
   const [notePath, setNotePath] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>(null);
+  const [note, setNote] = useState<SupernoteX>(null);
 
   const arrayBufferToDataUrl = async (arrayBuffer: ArrayBuffer): Promise<string> => {
     // Step 1: Convert ArrayBuffer to Blob
@@ -31,7 +33,9 @@ export default function useNoteView() {
         logInfo('Extracting note', notePath);
         const previousExtractInfo = store.fileCacheInfo[notePath];
         logInfo('Previous extract info', previousExtractInfo);
-        const { images, extractInfo } = await exportNote(notePath, previousExtractInfo, (msg: string) => logInfo(msg));
+        const { note, images, extractInfo } = await exportNote(notePath, previousExtractInfo, (msg: string) =>
+          logInfo(msg),
+        );
         await updateFileCacheInfo(notePath, {
           pages: extractInfo.map((info) => ({
             index: info.index,
@@ -56,9 +60,10 @@ export default function useNoteView() {
           }),
         );
         setImages(allImages);
+        setNote(note);
       }
     })();
   }, [notePath]);
 
-  return { setNotePath, images };
+  return { setNotePath, images, note };
 }

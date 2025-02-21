@@ -9,6 +9,7 @@ export async function exportNote(
   previousExtractInfo?: NotePageCache,
   logger: (msg: string) => void = console.log,
 ): Promise<{
+  note: SupernoteX;
   images: Image[];
   extractInfo: NotePageExtractInfo<{ imageIndex?: number }>[];
 }> {
@@ -47,5 +48,5 @@ export async function exportNote(
     }
     return info;
   });
-  return { images: markImages, extractInfo: updatedMarkInfo };
+  return { note, images: markImages, extractInfo: updatedMarkInfo };
 }
