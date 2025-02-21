@@ -1,6 +1,8 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import useAppLogger from '@/hooks/useAppLogger';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useCallback, useEffect, useState } from 'react';
+import { LogMessage } from '@/components/AppLogger';
 
 type LogViewerProps = {
   open: boolean;
@@ -10,6 +12,33 @@ type LogViewerProps = {
 export default function LogViewer(props: LogViewerProps) {
   const { open, onClose } = props;
   const { logs } = useAppLogger();
+
+  const BATCH_SIZE = 100;
+  const [displayedLogs, setDisplayedLogs] = useState<LogMessage[]>([]);
+  const [currentBatch, setCurrentBatch] = useState(1);
+
+  useEffect(() => {
+    setDisplayedLogs(logs.slice(0, BATCH_SIZE));
+  }, [logs]);
+
+  const loadMoreLogs = useCallback(() => {
+    const nextBatch = currentBatch + 1;
+    const newLogs = logs.slice(0, nextBatch * BATCH_SIZE);
+    setDisplayedLogs(newLogs);
+    setCurrentBatch(nextBatch);
+  }, [currentBatch, logs]);
+
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      const element = e.target as HTMLDivElement;
+      const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 50;
+
+      if (isNearBottom && displayedLogs.length < logs.length) {
+        loadMoreLogs();
+      }
+    },
+    [displayedLogs.length, loadMoreLogs, logs.length],
+  );
 
   if (!open) {
     return null;
@@ -21,7 +50,7 @@ export default function LogViewer(props: LogViewerProps) {
         <DialogHeader>
           <DialogTitle>Log Viewer</DialogTitle>
         </DialogHeader>
-        <div className="relative flex-1 w-full overflow-auto">
+        <div className="relative flex-1 w-full overflow-auto" onScroll={handleScroll}>
           <Table>
             <TableHeader className="sticky top-0 bg-white z-10">
               <TableRow>
@@ -32,7 +61,7 @@ export default function LogViewer(props: LogViewerProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[...logs].reverse().map((log, index) => (
+              {displayedLogs.map((log, index) => (
                 <TableRow key={index}>
                   <TableCell>{new Date(log.timestamp).toLocaleString()}</TableCell>
                   <TableCell>
