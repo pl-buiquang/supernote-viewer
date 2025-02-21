@@ -20,6 +20,12 @@ export function NoteMenu(props: NoteMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [titles, setTitles] = useState([]);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [showStarredOnly, setShowStarredOnly] = useState(false);
+
+  const scrollToPageAndCloseMenu = (pageNumber: number) => {
+    scrollToPage(pageNumber);
+    setIsOpen(false);
+  };
 
   // Handle click outside to close menu
   useEffect(() => {
@@ -103,26 +109,8 @@ export function NoteMenu(props: NoteMenuProps) {
       >
         <nav className="space-y-4">
           <h2 className="text-xl font-semibold">Menu</h2>
-          <details>
-            <summary className="text-lg font-semibold cursor-pointer hover:bg-muted/50 p-2 rounded-md">Pages</summary>
-            <ul className="space-y-2 mt-2 pl-4">
-              {note.pages.map((page, i) => {
-                return (
-                  <li key={i}>
-                    <a
-                      href="#"
-                      className="block rounded-md px-4 py-2 text-sm hover:bg-muted"
-                      onClick={() => scrollToPage(i)}
-                    >
-                      Page {i + 1}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </details>
 
-          <details>
+          <details open>
             <summary className="text-lg font-semibold cursor-pointer hover:bg-muted/50 p-2 rounded-md">
               Table of Contents
             </summary>
@@ -133,7 +121,7 @@ export function NoteMenu(props: NoteMenuProps) {
                     <a
                       href="#"
                       className="block rounded-md px-4 py-2 text-sm hover:bg-muted"
-                      onClick={() => scrollToPage(title.page - 1)}
+                      onClick={() => scrollToPageAndCloseMenu(title.page - 1)}
                     >
                       <img src={title.image} alt={title.id} />
                     </a>
@@ -141,6 +129,50 @@ export function NoteMenu(props: NoteMenuProps) {
                 );
               })}
             </ul>
+          </details>
+
+          <details>
+            <summary className="text-lg font-semibold cursor-pointer hover:bg-muted/50 p-2 rounded-md">Pages</summary>
+            <div className="mt-2 pl-4">
+              <label className="flex items-center gap-2 mb-2">
+                <input type="checkbox" className="rounded" onChange={(e) => setShowStarredOnly(e.target.checked)} />
+                <span className="text-sm">Show starred pages only</span>
+              </label>
+              <ul className="space-y-2">
+                {note.pages
+                  .map((page, i) => ({ page, i }))
+                  .filter(({ page }) => !showStarredOnly || page.FIVESTAR)
+                  .map(({ page, i }) => {
+                    return (
+                      <li key={page.PAGEID}>
+                        <a
+                          href="#"
+                          className="block rounded-md px-4 py-2 text-sm hover:bg-muted flex items-center gap-2"
+                          onClick={() => scrollToPageAndCloseMenu(i)}
+                        >
+                          <span>Page {i + 1}</span>
+                          {page.FIVESTAR && (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="text-yellow-500"
+                            >
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                          )}
+                        </a>
+                      </li>
+                    );
+                  })}
+              </ul>
+            </div>
           </details>
         </nav>
       </div>
