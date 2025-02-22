@@ -14,8 +14,8 @@
     "windows": [
       {
         "title": "supernote-viewer",
-        "width": 1280,
-        "height": 800
+        "width": 1440,
+        "height": 900
       }
     ],
     "security": {
