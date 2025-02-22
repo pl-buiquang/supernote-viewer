@@ -9,6 +9,7 @@ import './index.css';
 import useScrollPosition from '@/hooks/useScrollPosition';
 import { useStore } from '@/store';
 import usePlatform from '@/hooks/usePlatform';
+import { PageViewport } from 'pdfjs-dist';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs`;
 
@@ -24,12 +25,13 @@ export default function PdfViewer(props: FileViewerProps) {
   const { getCachedFile, exists } = useCache();
   const { store } = useStore();
   const [pdf, setPdf] = useState<pdfjs.PDFDocumentProxy | null>(null);
+  const [scale] = useState(1.75);
   const [loading, setLoading] = useState(true);
   const currentProcessedFile = useRef<string | null>(null);
   const [numPages, setNumPages] = useState(0);
   const linksRefs = useRef([]);
   const canvasRefs = useRef<HTMLCanvasElement[]>([]);
-  const [pageIds, setPageIds] = useState<Record<string, RefProxy>>({});
+  const [pageIds, setPageIds] = useState<Record<number, { ref: RefProxy; viewPort: PageViewport }>>({});
   const { currentPageInView } = useScrollPosition({ scrollableContainerRef, file, loaded: numPages > 0 });
   const [lastViewedPage] = useState(store.fileCacheInfo[file]?.lastViewedPage);
 
@@ -82,10 +84,10 @@ export default function PdfViewer(props: FileViewerProps) {
         const pagesInfo = await Promise.all(
           Array.from({ length: pdf.numPages }, async (_, i) => {
             const page = await pdf.getPage(i + 1);
-            return { ref: page.ref, viewport: page.getViewport({ scale: 1.5 }), pageNumber: i + 1 };
+            return { ref: page.ref, viewPort: page.getViewport({ scale }), pageNumber: i + 1 };
           }),
         );
-        setPageIds(pagesInfo.reduce((acc, pageInfo) => ({ ...acc, [pageInfo.pageNumber]: pageInfo.ref }), {}));
+        setPageIds(pagesInfo.reduce((acc, pageInfo) => ({ ...acc, [pageInfo.pageNumber]: pageInfo }), {}));
       }
     })();
   }, [file]);
@@ -95,11 +97,10 @@ export default function PdfViewer(props: FileViewerProps) {
       if (pdf && Object.keys(pageIds).length > 0) {
         logInfo('Initializing pages', pageIds);
         await Promise.all(
-          Array.from({ length: pdf.numPages }, async (_, i) => {
-            const page = await pdf.getPage(i + 1);
+          Object.values(pageIds).map(async (pageInfo, i) => {
             const canvas = canvasRefs.current[i];
             if (canvas) {
-              const viewPort = page.getViewport({ scale: 1.5 });
+              const viewPort = pageInfo.viewPort;
               canvas.height = viewPort.height;
               canvas.width = viewPort.width;
             }
@@ -118,7 +119,7 @@ export default function PdfViewer(props: FileViewerProps) {
           continue;
         }
         const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1.5 });
+        const viewport = page.getViewport({ scale });
         const canvas = canvasRefs.current[i - 1];
 
         if (canvas && !canvas.getAttribute('rendered')) {
@@ -176,6 +177,21 @@ export default function PdfViewer(props: FileViewerProps) {
     }
   }, [pdf, currentPageInView, loading]);
 
+  // TODO implement zoom
+  // useEffect(() => {
+  //   const handleWheel = (e: WheelEvent) => {
+  //     if (e.ctrlKey) {
+  //       e.preventDefault();
+  //       const delta = e.deltaY > 0 ? -0.1 : 0.1;
+  //       const newScale = Math.max(0.5, Math.min(3, scale + delta));
+  //       setScale(newScale);
+  //     }
+  //   };
+
+  //   window.addEventListener('wheel', handleWheel, { passive: false });
+  //   return () => window.removeEventListener('wheel', handleWheel);
+  // }, [scale]);
+
   return (
     <>
       {loading && (
@@ -192,7 +208,7 @@ export default function PdfViewer(props: FileViewerProps) {
         <div style={{ position: 'relative', overflowY: 'auto', height: '100%' }}>
           {Array.from({ length: numPages }, (_, i) => (
             <div
-              id={`page-${pageIds[i + 1]?.num}-${pageIds[i + 1]?.gen}`}
+              id={`page-${pageIds[i + 1]?.ref.num}-${pageIds[i + 1]?.ref.gen}`}
               key={i}
               style={{ position: 'relative' }}
               ref={(el) => (linksRefs.current[i] = el)}
