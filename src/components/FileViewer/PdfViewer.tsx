@@ -25,7 +25,7 @@ export default function PdfViewer(props: FileViewerProps) {
   const { getCachedFile, exists } = useCache();
   const { store } = useStore();
   const [pdf, setPdf] = useState<pdfjs.PDFDocumentProxy | null>(null);
-  const [scale] = useState(1.75);
+  const [scale] = useState(platform.isMobile ? 0.75 : 1.75);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const currentProcessedFile = useRef<string | null>(null);
@@ -53,26 +53,40 @@ export default function PdfViewer(props: FileViewerProps) {
         try {
           currentProcessedFile.current = file;
           logInfo('Exporting PDF to marked PDF');
-          const markFilepath = `${file}.mark`;
-          const previousExportExists = await exists(file);
+          const isMarkFile = file.endsWith('.pdf.mark');
+          const markFilepath = isMarkFile ? file : `${file}.mark`;
+          const basePdfFile = isMarkFile ? file.replace('.mark', '') : file;
+          const previousExportExists = await exists(basePdfFile);
           logInfo('Previous export exists' + previousExportExists);
-          const outputFilename = await getCachedFile(file);
+          const outputFilename = await getCachedFile(basePdfFile);
           logInfo('Output filename:' + outputFilename);
-          const sourceFile = previousExportExists ? outputFilename : file;
-          logInfo('Source file:' + sourceFile);
-          const outputFilePath = await exportPdfTo(
-            platform,
-            sourceFile,
-            markFilepath,
-            outputFilename,
-            previousExportExists,
-            {
-              logInfo,
-              logWarn,
-              logDebug,
-              logError,
-            },
-          );
+          let outputFilePath = basePdfFile;
+          if (platform.isMobile && !previousExportExists) {
+            if (isMarkFile) {
+              setError('You must first open the base pdf file to be able to open the marked pdf file');
+              return;
+            } else {
+              const pdfData = await platform.readFile(basePdfFile, false);
+              await platform.writeFile(outputFilename, new Uint8Array(pdfData));
+            }
+          } else {
+            const sourceFile = previousExportExists ? outputFilename : basePdfFile;
+            logInfo('Source file:' + sourceFile);
+            outputFilePath = await exportPdfTo(
+              platform,
+              sourceFile,
+              markFilepath,
+              outputFilename,
+              previousExportExists,
+              {
+                logInfo,
+                logWarn,
+                logDebug,
+                logError,
+              },
+            );
+          }
+
           logInfo('Loading PDF Data', outputFilePath);
           const pdfData = await platform.readFile(outputFilePath, true);
           logInfo('Loading PDF', outputFilePath);

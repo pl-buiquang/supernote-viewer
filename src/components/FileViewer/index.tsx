@@ -8,6 +8,9 @@ type FileViewerProps = {
 
 const viewers = {
   '.pdf': (file, scrollableContainerRef) => <PdfViewer file={file} scrollableContainerRef={scrollableContainerRef} />,
+  '.pdf.mark': (file, scrollableContainerRef) => (
+    <PdfViewer file={file} scrollableContainerRef={scrollableContainerRef} />
+  ),
   '.note': (file, scrollableContainerRef) => <NoteViewer file={file} scrollableContainerRef={scrollableContainerRef} />,
 };
 
