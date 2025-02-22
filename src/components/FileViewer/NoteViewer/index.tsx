@@ -3,14 +3,49 @@ import useNoteView from '@/hooks/useNoteView';
 import '../index.css';
 import useScrollPosition from '@/hooks/useScrollPosition';
 import NoteMenu from './Menu';
+import { extractPageRefFromTitle } from '@/services/noteViewer';
+import { SupernoteX } from 'supernote-typescript';
+import { useStore } from '@/store';
 
 type FileViewerProps = {
   file: string;
   scrollableContainerRef?: React.RefObject<HTMLDivElement>;
 };
 
+const getNoteLink = (notePath: string) => {
+  const androidNotePath = '/storage/emulated/0/Note/';
+  if (notePath.startsWith(androidNotePath)) {
+    return notePath.replace(androidNotePath, '');
+  }
+  return null;
+};
+
+const getLinkForPage = (note: SupernoteX, page: number, currentFile: string, currentFolder?: string) => {
+  return Object.keys(note.links)
+    .map((key) => ({ ...note.links[key].at(0), LINKSEQNO: key }))
+    .filter((link) => extractPageRefFromTitle(link.LINKSEQNO) === page)
+    .map((link) => {
+      const rect = (link.LINKRECT as unknown as string).split(',').map((n) => parseFloat(n));
+      const [x, y, width, height] = [
+        (rect[0] / note.pageWidth) * 100,
+        (rect[1] / note.pageHeight) * 100,
+        (rect[2] / note.pageWidth) * 100,
+        (rect[3] / note.pageHeight) * 100,
+      ];
+      const noteLink = link.LINKFILE ? getNoteLink(decodeURIComponent(atob(link.LINKFILE))) : null;
+      return {
+        ...link,
+        LINKRECT: [x, y, width, height],
+        pageLink: link.OBJPAGE !== 'none' ? parseInt(link.OBJPAGE) : null,
+        noteLink: (currentFolder ? currentFolder + '/' : '') + noteLink,
+        sameNote: currentFile.endsWith(noteLink),
+      };
+    });
+};
+
 export default function NoteViewer(props: FileViewerProps) {
   const { file, scrollableContainerRef } = props;
+  const { store, setStoreValue } = useStore();
   const currentFile = useRef<string>(null);
   const { note, images, setNotePath, error } = useNoteView();
   const imageRefs = useRef<HTMLDivElement[]>([]);
@@ -80,6 +115,32 @@ export default function NoteViewer(props: FileViewerProps) {
                   </button>
                 </div>
               </div>
+            </div>
+            <div className="absolute top-0 left-0 w-full h-full">
+              {getLinkForPage(note, i + 1, file, store.baseFolder).map((link) => {
+                return (
+                  <a
+                    key={link.LINKSEQNO}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (link.sameNote) {
+                        if (link.pageLink !== null) {
+                          scrollToPage(link.pageLink - 1);
+                        }
+                      } else if (link.noteLink) {
+                        setStoreValue('currentFile', link.noteLink);
+                      }
+                    }}
+                    className="absolute cursor-pointer"
+                    style={{
+                      top: `${link.LINKRECT[1]}%`,
+                      left: `${link.LINKRECT[0]}%`,
+                      width: `${link.LINKRECT[2]}%`,
+                      height: `${link.LINKRECT[3]}%`,
+                    }}
+                  />
+                );
+              })}
             </div>
             <img
               src={image}

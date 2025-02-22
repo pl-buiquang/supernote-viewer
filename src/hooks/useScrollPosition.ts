@@ -59,7 +59,7 @@ const useScrollPosition = (props: UseScrollPositionProps) => {
         scrollableContainerRef.current.parentElement.removeEventListener('scroll', handleScroll);
       };
     }
-  }, [loaded]);
+  }, [loaded, file]);
 
   return { currentPageInView };
 };

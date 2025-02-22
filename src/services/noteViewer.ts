@@ -52,3 +52,8 @@ export async function exportNote(
   });
   return { note, images: markImages, extractInfo: updatedMarkInfo };
 }
+
+export const extractPageRefFromTitle = (title: string) => {
+  const match = title.match(/^(\d{4})/);
+  return match ? parseInt(match[1]) : null;
+};

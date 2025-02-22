@@ -4,15 +4,11 @@ import { cn } from '@/lib/utils';
 import { Image } from 'image-js';
 import { SupernoteX, RattaRLEDecoder } from 'supernote-typescript';
 import { useEffect, useRef, useState } from 'react';
+import { extractPageRefFromTitle } from '@/services/noteViewer';
 
 type NoteMenuProps = {
   note: SupernoteX | null;
   scrollToPage: (page: number) => void;
-};
-
-const extractPageRefFromTitle = (title: string) => {
-  const match = title.match(/^(\d{4})/);
-  return match ? parseInt(match[1]) : null;
 };
 
 export function NoteMenu(props: NoteMenuProps) {
