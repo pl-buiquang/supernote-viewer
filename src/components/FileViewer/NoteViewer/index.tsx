@@ -6,6 +6,7 @@ import NoteMenu from './Menu';
 import { extractPageRefFromTitle } from '@/services/noteViewer';
 import { SupernoteX } from 'supernote-typescript';
 import { useStore } from '@/store';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 type FileViewerProps = {
   file: string;
@@ -41,6 +42,18 @@ const getLinkForPage = (note: SupernoteX, page: number, currentFile: string, cur
         sameNote: currentFile.endsWith(noteLink),
       };
     });
+};
+
+const getOCRText = (note: SupernoteX, page: number) => {
+  const paragraphs = note.pages[page]?.recognitionElements?.filter((el) => el.type === 'Text') || [];
+  if (paragraphs.length === 0) return <div className="text-gray-400">No OCR Text</div>;
+  return paragraphs.map((el, i) => (
+    <div key={i}>
+      {el.label.split('\n').map((sub, j) => (
+        <div key={j}>{sub}</div>
+      ))}
+    </div>
+  ));
 };
 
 export default function NoteViewer(props: FileViewerProps) {
@@ -92,30 +105,6 @@ export default function NoteViewer(props: FileViewerProps) {
             className="bg-muted/50 flex justify-center items-center mb-6 page relative group/info"
             ref={(el) => (imageRefs.current[i] = el)}
           >
-            <div className="absolute top-2 left-2 opacity-0 group-hover/info:opacity-100 transition-opacity duration-200">
-              <div className="flex items-center bg-black/50 backdrop-blur-sm rounded-full py-1 px-2 group/info-icon">
-                <div className="text-white text-sm min-w-4 text-center">{i + 1}</div>
-                <div className="w-0 group-hover/info-icon:w-6 transition-all duration-200 overflow-hidden">
-                  <button className="text-white hover:text-white/80 ml-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="15" r="1" />
-                      <circle cx="19" cy="15" r="1" />
-                      <circle cx="5" cy="15" r="1" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
             <div className="absolute top-0 left-0 w-full h-full">
               {getLinkForPage(note, i + 1, file, store.baseFolder).map((link) => {
                 return (
@@ -141,6 +130,37 @@ export default function NoteViewer(props: FileViewerProps) {
                   />
                 );
               })}
+            </div>
+            <div className="absolute top-2 left-2 opacity-0 group-hover/info:opacity-100 transition-opacity duration-200">
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger>
+                  <div className="flex items-center bg-black/50 backdrop-blur-sm rounded-full py-1 px-2 group/info-icon">
+                    <div className="text-white text-sm min-w-4 text-center">{i + 1}</div>
+                    <div className="w-0 group-hover/info-icon:w-6 transition-all duration-200 overflow-hidden">
+                      <button className="text-white hover:text-white/80 ml-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="15" r="1" />
+                          <circle cx="19" cy="15" r="1" />
+                          <circle cx="5" cy="15" r="1" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right" align="start" sideOffset={10}>
+                  {getOCRText(note, i)}
+                </TooltipContent>
+              </Tooltip>
             </div>
             <img
               src={image}
