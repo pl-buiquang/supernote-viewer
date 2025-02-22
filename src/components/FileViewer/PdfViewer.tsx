@@ -27,6 +27,7 @@ export default function PdfViewer(props: FileViewerProps) {
   const [pdf, setPdf] = useState<pdfjs.PDFDocumentProxy | null>(null);
   const [scale] = useState(1.75);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const currentProcessedFile = useRef<string | null>(null);
   const [numPages, setNumPages] = useState(0);
   const linksRefs = useRef([]);
@@ -49,45 +50,50 @@ export default function PdfViewer(props: FileViewerProps) {
     (async () => {
       // TODO remove this, it was to make sure not to load multiple time the same file
       if (file !== currentProcessedFile.current) {
-        currentProcessedFile.current = file;
-        logInfo('Exporting PDF to marked PDF');
-        const markFilepath = `${file}.mark`;
-        const previousExportExists = await exists(file);
-        logInfo('Previous export exists' + previousExportExists);
-        const outputFilename = await getCachedFile(file);
-        logInfo('Output filename:' + outputFilename);
-        const sourceFile = previousExportExists ? outputFilename : file;
-        logInfo('Source file:' + sourceFile);
-        const outputFilePath = await exportPdfTo(
-          platform,
-          sourceFile,
-          markFilepath,
-          outputFilename,
-          previousExportExists,
-          {
-            logInfo,
-            logWarn,
-            logDebug,
-            logError,
-          },
-        );
-        logInfo('Loading PDF Data', outputFilePath);
-        const pdfData = await platform.readFile(outputFilePath, true);
-        logInfo('Loading PDF', outputFilePath);
-        const loadingTask = pdfjs.getDocument(pdfData);
-        const pdf = await loadingTask.promise;
-        setPdf(pdf);
-        logInfo('PDF loaded');
-        setNumPages(pdf.numPages);
-        logInfo('Number of pages:', pdf.numPages);
+        try {
+          currentProcessedFile.current = file;
+          logInfo('Exporting PDF to marked PDF');
+          const markFilepath = `${file}.mark`;
+          const previousExportExists = await exists(file);
+          logInfo('Previous export exists' + previousExportExists);
+          const outputFilename = await getCachedFile(file);
+          logInfo('Output filename:' + outputFilename);
+          const sourceFile = previousExportExists ? outputFilename : file;
+          logInfo('Source file:' + sourceFile);
+          const outputFilePath = await exportPdfTo(
+            platform,
+            sourceFile,
+            markFilepath,
+            outputFilename,
+            previousExportExists,
+            {
+              logInfo,
+              logWarn,
+              logDebug,
+              logError,
+            },
+          );
+          logInfo('Loading PDF Data', outputFilePath);
+          const pdfData = await platform.readFile(outputFilePath, true);
+          logInfo('Loading PDF', outputFilePath);
+          const loadingTask = pdfjs.getDocument(pdfData);
+          const pdf = await loadingTask.promise;
+          setPdf(pdf);
+          logInfo('PDF loaded');
+          setNumPages(pdf.numPages);
+          logInfo('Number of pages:', pdf.numPages);
 
-        const pagesInfo = await Promise.all(
-          Array.from({ length: pdf.numPages }, async (_, i) => {
-            const page = await pdf.getPage(i + 1);
-            return { ref: page.ref, viewPort: page.getViewport({ scale }), pageNumber: i + 1 };
-          }),
-        );
-        setPageIds(pagesInfo.reduce((acc, pageInfo) => ({ ...acc, [pageInfo.pageNumber]: pageInfo }), {}));
+          const pagesInfo = await Promise.all(
+            Array.from({ length: pdf.numPages }, async (_, i) => {
+              const page = await pdf.getPage(i + 1);
+              return { ref: page.ref, viewPort: page.getViewport({ scale }), pageNumber: i + 1 };
+            }),
+          );
+          setPageIds(pagesInfo.reduce((acc, pageInfo) => ({ ...acc, [pageInfo.pageNumber]: pageInfo }), {}));
+        } catch (error) {
+          logError('Error loading PDF', error);
+          setError(error);
+        }
       }
     })();
   }, [file]);
@@ -191,6 +197,10 @@ export default function PdfViewer(props: FileViewerProps) {
   //   window.addEventListener('wheel', handleWheel, { passive: false });
   //   return () => window.removeEventListener('wheel', handleWheel);
   // }, [scale]);
+
+  if (error) {
+    return <div>Error loading PDF : {`${error}`}</div>;
+  }
 
   return (
     <>

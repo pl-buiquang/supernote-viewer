@@ -12,7 +12,7 @@ type FileViewerProps = {
 export default function NoteViewer(props: FileViewerProps) {
   const { file, scrollableContainerRef } = props;
   const currentFile = useRef<string>(null);
-  const { note, images, setNotePath } = useNoteView();
+  const { note, images, setNotePath, error } = useNoteView();
   const imageRefs = useRef<HTMLDivElement[]>([]);
   useScrollPosition({ scrollableContainerRef, file, loaded: !!images, initLastScrollPosition: true });
 
@@ -183,6 +183,18 @@ export default function NoteViewer(props: FileViewerProps) {
           </div>
         ))}
       </>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="flex items-center justify-center h-full mt-20">
+          <div className="flex flex-col items-center gap-4">
+            <div className="text-red-500">Error: {`${error}`}</div>
+          </div>
+        </div>
+      </div>
     );
   }
 

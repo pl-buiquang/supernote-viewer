@@ -14,6 +14,8 @@ export default function useNoteView() {
   const [notePath, setNotePath] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>(null);
   const [note, setNote] = useState<SupernoteX>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [error, setError] = useState<any>(null);
 
   const arrayBufferToDataUrl = async (arrayBuffer: ArrayBuffer): Promise<string> => {
     // Step 1: Convert ArrayBuffer to Blob
@@ -31,43 +33,48 @@ export default function useNoteView() {
   useEffect(() => {
     (async () => {
       if (notePath) {
-        logInfo('Extracting note', notePath);
-        const previousExtractInfo = store.fileCacheInfo[notePath];
-        logInfo('Previous extract info', previousExtractInfo);
-        const { note, images, extractInfo } = await exportNote(platform, notePath, previousExtractInfo, {
-          logInfo,
-          logWarn,
-          logDebug,
-          logError,
-        });
-        await updateFileCacheInfo(notePath, {
-          pages: extractInfo.map((info) => ({
-            index: info.index,
-            pageNumber: info.pageNumber,
-            marksCount: info.marksCount,
-          })),
-          lastViewedPage: 0,
-        });
-        logInfo('Combining newly extracted images with cached ones');
-        const allImages = await Promise.all(
-          extractInfo.map(async (page) => {
-            const imageCachePath = notePath + page.pageNumber;
-            const cachePath = await getCachedFile(imageCachePath);
-            if (page.imageIndex !== undefined) {
-              const image = images[page.imageIndex];
-              await platform.writeFile(cachePath, image.toBuffer());
-              return image.toDataURL();
-            } else {
-              const image = await platform.readFile(cachePath, true);
-              return await arrayBufferToDataUrl(image);
-            }
-          }),
-        );
-        setImages(allImages);
-        setNote(note);
+        try {
+          logInfo('Extracting note', notePath);
+          const previousExtractInfo = store.fileCacheInfo[notePath];
+          logInfo('Previous extract info', previousExtractInfo);
+          const { note, images, extractInfo } = await exportNote(platform, notePath, previousExtractInfo, {
+            logInfo,
+            logWarn,
+            logDebug,
+            logError,
+          });
+          await updateFileCacheInfo(notePath, {
+            pages: extractInfo.map((info) => ({
+              index: info.index,
+              pageNumber: info.pageNumber,
+              marksCount: info.marksCount,
+            })),
+            lastViewedPage: 0,
+          });
+          logInfo('Combining newly extracted images with cached ones');
+          const allImages = await Promise.all(
+            extractInfo.map(async (page) => {
+              const imageCachePath = notePath + page.pageNumber;
+              const cachePath = await getCachedFile(imageCachePath);
+              if (page.imageIndex !== undefined) {
+                const image = images[page.imageIndex];
+                await platform.writeFile(cachePath, image.toBuffer());
+                return image.toDataURL();
+              } else {
+                const image = await platform.readFile(cachePath, true);
+                return await arrayBufferToDataUrl(image);
+              }
+            }),
+          );
+          setImages(allImages);
+          setNote(note);
+        } catch (error) {
+          logError('Error extracting note', error);
+          setError(error);
+        }
       }
     })();
   }, [notePath]);
 
-  return { setNotePath, images, note };
+  return { setNotePath, images, note, error };
 }
