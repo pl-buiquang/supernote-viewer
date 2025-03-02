@@ -63,16 +63,30 @@ export class Platform {
   }
   async listFiles(dir: string): Promise<FileItem[]> {
     this.logger.logInfo('Tauri: Listing files from', dir);
-    const entries = await readDir(dir, {});
-    const metadata = await Promise.all(entries.map((e) => stat(`${dir}/${e.name}`, {})));
-    return metadata.map((m, i) => ({
-      id: entries[i].name,
-      name: entries[i].name,
-      type: m.isDirectory ? 'directory' : getFileType(entries[i].name),
-      size: byteSizeToString(m.size),
-      byteSize: m.size,
-      modifiedDate: m.atime.toLocaleString(),
-    }));
+    try {
+      const entries = await readDir(dir, {});
+      const metadata = await Promise.all(
+        entries.map((e) => {
+          try {
+            return stat(`${dir}/${e.name}`, {});
+          } catch (error) {
+            this.logger.logError('Error reading file metadata', error);
+            return { isDirectory: false, size: 0, atime: 0 };
+          }
+        }),
+      );
+      return metadata.map((m, i) => ({
+        id: entries[i].name,
+        name: entries[i].name,
+        type: m.isDirectory ? 'directory' : getFileType(entries[i].name),
+        size: byteSizeToString(m.size),
+        byteSize: m.size,
+        modifiedDate: m.atime.toLocaleString(),
+      }));
+    } catch (error) {
+      this.logger.logError('Error listing files', error);
+      return [];
+    }
   }
 
   async openFile(): Promise<string> {

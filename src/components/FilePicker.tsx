@@ -15,14 +15,15 @@ import usePlatform from '@/hooks/usePlatform';
 type FilePickerProps = {
   onFilePick: (file: string) => Promise<void>;
   isFolder?: boolean;
+  title?: string;
 };
 
 export default function FilePicker(props: FilePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const platform = usePlatform();
-  const { onFilePick, isFolder } = props;
-  const buttonTitle = isFolder ? 'Choose Folder' : 'Open File';
+  const { onFilePick, isFolder, title } = props;
+  const buttonTitle = title ? title : isFolder ? 'Choose Folder' : 'Open File';
 
   const handleOk = async () => {
     await onFilePick(inputValue);

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 
 import { useStore } from '@/store';
+import { Folder } from 'lucide-react';
 import FilePicker from './FilePicker';
 import {
   AlertDialog,
@@ -36,12 +37,14 @@ export type AppSidebarProps = {
 
 export default function AppSidebar({ ...props }: AppSidebarProps) {
   const { openLogs } = props;
-  const { setStoreValue } = useStore();
+  const { store, setStoreValue } = useStore();
   const { clearCache } = useCache();
   const [clearCacheModalOpen, setClearCacheModalOpen] = useState(false);
 
   const handleChooseFolder = async (file: string) => {
-    await setStoreValue('baseFolder', file);
+    if (file) {
+      await setStoreValue('baseFolder', file);
+    }
   };
 
   const handleChooseFile = async (file: string) => {
@@ -62,7 +65,6 @@ export default function AppSidebar({ ...props }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup key="main">
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem key="choose-file">
@@ -73,13 +75,27 @@ export default function AppSidebar({ ...props }: AppSidebarProps) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup key="settings">
-          <SidebarGroupLabel>Settings</SidebarGroupLabel>
+        <SidebarGroup key="base-folder">
+          <SidebarGroupLabel>Root folder</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              {store.baseFolder && (
+                <SidebarMenuItem key="base-folder">
+                  <div className="flex items-center gap-2 px-2 py-1">
+                    <Folder />
+                    <p className="text-sm text-gray-500 truncate ml-0.5" title={store.baseFolder}>
+                      {store.baseFolder}
+                    </p>
+                  </div>
+                </SidebarMenuItem>
+              )}
               <SidebarMenuItem key="choose-folder">
                 <SidebarMenuButton asChild>
-                  <FilePicker onFilePick={handleChooseFolder} isFolder />
+                  <FilePicker
+                    onFilePick={handleChooseFolder}
+                    isFolder
+                    title={store.baseFolder ? 'Change root folder' : 'Choose root folder'}
+                  />
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
