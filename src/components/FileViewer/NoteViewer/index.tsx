@@ -7,6 +7,7 @@ import { extractPageRefFromTitle } from '@/services/noteViewer';
 import { SupernoteX } from 'supernote-typescript';
 import { useStore } from '@/store';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import useCtrlKeyState from '@/hooks/useCtrlKeyState';
 
 type FileViewerProps = {
   file: string;
@@ -72,6 +73,7 @@ export default function NoteViewer(props: FileViewerProps) {
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const modalRef = useRef<HTMLDivElement>(null);
+  const isCtrlPressed = useCtrlKeyState();
 
   useEffect(() => {
     if (isModalOpen && modalRef.current) {
@@ -86,6 +88,13 @@ export default function NoteViewer(props: FileViewerProps) {
       setNotePath(file);
     }
   }, [file]);
+
+  const openModalView = (image: string) => {
+    setSelectedImage(image);
+    setIsModalOpen(true);
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+  };
 
   const scrollToPage = useCallback((page: number) => {
     const pageRef = imageRefs.current?.[page];
@@ -102,7 +111,8 @@ export default function NoteViewer(props: FileViewerProps) {
           <div
             id={`${i}`}
             key={i}
-            className="bg-muted/50 flex justify-center items-center mb-6 page relative group/info"
+            className={`bg-muted/50 flex justify-center items-center mb-6 page relative group/info ${isCtrlPressed ? 'cursor-pointer' : ''}`}
+            onClick={(event) => event.ctrlKey && openModalView(image)}
             ref={(el) => (imageRefs.current[i] = el)}
           >
             <div className="absolute top-0 left-0 w-full h-full">
@@ -162,17 +172,7 @@ export default function NoteViewer(props: FileViewerProps) {
                 </TooltipContent>
               </Tooltip>
             </div>
-            <img
-              src={image}
-              alt={`Page ${i}`}
-              className="cursor-pointer"
-              onClick={() => {
-                setSelectedImage(image);
-                setIsModalOpen(true);
-                setScale(1);
-                setPosition({ x: 0, y: 0 });
-              }}
-            />
+            <img src={image} alt={`Page ${i}`} />
 
             {isModalOpen && selectedImage === image && (
               <div
