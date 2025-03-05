@@ -24,11 +24,12 @@ class WorkerPool {
 
   constructor(
     logger: Logger,
-    private maxWorkers: number = navigator.hardwareConcurrency,
+    private maxWorkers: number = navigator.hardwareConcurrency - 1,
   ) {
     this.logger = logger;
-    this.logger.logInfo(`Creating worker pool with ${maxWorkers} workers`);
-    this.workers = Array(maxWorkers)
+    const nonEmptyMaxWorkers = Math.max(1, maxWorkers);
+    this.logger.logInfo(`Creating worker pool with ${nonEmptyMaxWorkers} workers`);
+    this.workers = Array(nonEmptyMaxWorkers)
       .fill(null)
       .map(() => new Worker());
   }
