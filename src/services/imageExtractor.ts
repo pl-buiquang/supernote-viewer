@@ -2,7 +2,7 @@ import Worker from '@/workers/noteToImage.worker?worker';
 import { SupernoteWorkerMessage, SupernoteWorkerResponse } from '@/workers/noteToImage.worker';
 import { Image } from 'image-js';
 import { SupernoteX } from 'supernote-typescript';
-import { Logger } from '@/hooks/useAppLogger';
+import { Logger } from '@/types';
 
 function dataUrlToBuffer(dataUrl: string): ArrayBuffer {
   // Remove data URL prefix (e.g., "data:image/png;base64,")

@@ -2,11 +2,11 @@ import { PDFDict, PDFDocument, PDFName, PDFRef, PDFStream } from 'pdf-lib';
 import { SupernoteX } from 'supernote-typescript';
 import pako from 'pako';
 import { extractImages } from './imageExtractor';
-import { Logger } from '@/hooks/useAppLogger';
-import { Platform } from './platform';
+import { Logger } from '@/types';
+import { IPlatform } from './platform/index';
 
 export async function exportPdf(
-  platform: Platform,
+  platform: IPlatform,
   pdfPath: string,
   markFile: string,
   isPdfPathCached: boolean,
@@ -107,7 +107,7 @@ export async function exportPdf(
 }
 
 export async function exportPdfTo(
-  platform: Platform,
+  platform: IPlatform,
   pdfPath: string,
   markFile: string,
   outputPdfPath: string,

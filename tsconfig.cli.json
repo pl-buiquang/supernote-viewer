@@ -20,6 +20,6 @@
     "allowSyntheticDefaultImports": true,
     "noEmit": false
   },
-  "include": ["src/cli/**/*.ts"],
+  "include": ["src/cli/**/*.ts", "src/services/platform/**/*.ts", "src/services/utils.ts", "src/types/index.ts"],
   "exclude": ["node_modules", "dist"]
 }

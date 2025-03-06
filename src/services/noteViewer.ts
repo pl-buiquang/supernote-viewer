@@ -2,11 +2,11 @@ import { SupernoteX } from 'supernote-typescript';
 import { Image } from 'image-js';
 import { NotePageCache, NotePageExtractInfo } from '@/store';
 import { extractImages } from './imageExtractor';
-import { Platform } from './platform';
-import { Logger } from '@/hooks/useAppLogger';
+import { IPlatform } from './platform/index';
+import { Logger } from '@/types';
 
 export async function exportNote(
-  platform: Platform,
+  platform: IPlatform,
   notePath: string,
   previousExtractInfo: NotePageCache | undefined,
   logger: Logger,

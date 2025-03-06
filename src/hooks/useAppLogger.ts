@@ -1,13 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AppLoggerContext, LogMessage } from '@/components/AppLogger';
+import { Logger } from '@/types';
 import { useContext } from 'react';
-
-export interface Logger {
-  logInfo: (msg: string, ...args: any[]) => void;
-  logError: (msg: string, ...args: any[]) => void;
-  logWarn: (msg: string, ...args: any[]) => void;
-  logDebug: (msg: string, ...args: any[]) => void;
-}
 
 export const useAppLogger = (loggerName?: string): Logger & { logs: LogMessage[] } => {
   const context = useContext(AppLoggerContext);

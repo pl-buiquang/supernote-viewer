@@ -1,9 +1,9 @@
-import { Platform } from '@/services/platform';
+import { IPlatform, PlatformFactory } from '@/services/platform/index';
 import useAppLogger from './useAppLogger';
 
-const usePlatform = (): Platform => {
+const usePlatform = (): IPlatform => {
   const logger = useAppLogger('platform');
-  return new Platform(logger);
+  return PlatformFactory.createPlatform(logger);
 };
 
 export default usePlatform;

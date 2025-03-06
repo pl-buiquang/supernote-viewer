@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import fs from 'fs-extra';
 import path from 'path';
 import { SupernoteX, toImage } from 'supernote-typescript';
+import { NodePlatform } from '../services/platform/NodePlatform.js';
 
 const program = new Command();
 
@@ -15,6 +16,18 @@ program
   .option('--media-folder <folder_path>', 'Folder to save extracted images')
   .helpOption('-h, --help', 'Display help for command');
 
+// Create a simple logger for CLI
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function createLogger() {
+  return {
+    logInfo: (msg: string, ...args: any[]) => console.log(`[INFO] ${msg}`, ...args),
+    logError: (msg: string, ...args: any[]) => console.error(`[ERROR] ${msg}`, ...args),
+    logWarn: (msg: string, ...args: any[]) => console.warn(`[WARN] ${msg}`, ...args),
+    logDebug: (msg: string, ...args: any[]) => console.debug(`[DEBUG] ${msg}`, ...args),
+    logs: [],
+  };
+}
+
 async function extractImages(inputFile: string, mediaFolder?: string, mdOutputPath?: string) {
   try {
     // Check if input file exists
@@ -23,9 +36,13 @@ async function extractImages(inputFile: string, mediaFolder?: string, mdOutputPa
       process.exit(1);
     }
 
+    // Create platform and logger
+    const logger = createLogger();
+    const platform = new NodePlatform(logger);
+
     // Read the note file
-    const buffer = fs.readFileSync(inputFile);
-    const note = new SupernoteX(buffer);
+    const noteData = await platform.readFile(inputFile);
+    const note = new SupernoteX(new Uint8Array(noteData));
 
     // Create media folder if specified, otherwise use current directory
     const outputDir = mediaFolder ? path.resolve(mediaFolder) : process.cwd();
@@ -44,7 +61,7 @@ async function extractImages(inputFile: string, mediaFolder?: string, mdOutputPa
       const pageNumber = i + 1;
       const imageFileName = `${baseName}_page_${pageNumber}.png`;
       const imageFilePath = path.join(outputDir, imageFileName);
-      
+
       // Save the image
       const image = images[i];
       if (image) {
