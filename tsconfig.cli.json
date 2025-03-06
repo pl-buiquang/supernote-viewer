@@ -18,7 +18,8 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
-    "noEmit": false
+    "noEmit": false,
+    "sourceMap": true
   },
   "include": ["src/cli/**/*.ts"],
   "exclude": ["node_modules", "dist"]
