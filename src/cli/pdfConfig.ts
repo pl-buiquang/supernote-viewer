@@ -53,10 +53,17 @@ export const pdfMarkdownConfig: PDFMarkdownConfig = {
   months: generateMonthsConfig(12),
   weeks: generateWeeksConfig(52),
   days: Array.from({ length: YEAR_DAYS }, (_, i) => {
+    const day = i + 1;
     return {
-      title: new Date(YEAR, 0, i + 1).toISOString().split('T')[0],
-      pageNumbers: [i + 71, i + 436],
+      title: new Date(YEAR, 0, day + 1).toISOString().split('T')[0],
+      pageNumbers: [day + 71],
       useTemplate: true,
     };
   }),
+  reflect: [
+    {
+      title: `${YEAR}-daily-log`,
+      pageNumbers: Array.from({ length: YEAR_DAYS }, (_, i) => i + 437),
+    },
+  ],
 };

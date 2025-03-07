@@ -32,15 +32,22 @@ export class NoteImageExtractor extends BaseImageExtractor {
   /**
    * Generates a markdown file with links to the extracted images
    */
-  protected generateMarkdown(imageFilePaths: string[]): void {
+  protected async generateMarkdown(
+    imageFilePaths: Record<number, string>,
+    newOrUpdatePages: Array<string | number>,
+  ): Promise<void> {
+    console.log(`Generating markdown file with new or updated pages ${newOrUpdatePages.length}...`);
     let mdContent = `# ${this.baseName}\n\n`;
-    for (let i = 0; i < imageFilePaths.length; i++) {
-      const pageNumber = i + 1;
+    const images = Object.entries(imageFilePaths).sort(([a], [b]) => parseInt(a) - parseInt(b));
+    for (let i = 0; i < images.length; i++) {
+      const pageNumber = images[i][0];
+      const imageFilePath = images[i][1];
+
       // Skip if no image file path for this page
-      if (!imageFilePaths[i]) continue;
+      if (!imageFilePath) continue;
 
       // Get the relative path from the markdown file to the image
-      const relativePath = path.relative(path.dirname(this.outputDir), imageFilePaths[i] || '');
+      const relativePath = path.relative(path.dirname(this.outputDir), imageFilePath || '');
       mdContent += `## Page ${pageNumber}\n\n`;
       mdContent += `![Page ${pageNumber}|900](${relativePath.replace(/\\/g, '/')})\n\n`;
     }

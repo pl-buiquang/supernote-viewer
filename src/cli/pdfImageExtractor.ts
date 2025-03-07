@@ -37,6 +37,7 @@ export class PdfImageExtractor extends BaseImageExtractor {
     // Get mark file stats for modification time
     const markStats = fs.statSync(this.markFilePath);
     this.markModTime = markStats.mtimeMs;
+    this.fileModTime = Math.max(this.fileModTime, this.markModTime);
   }
 
   protected getNoteFile(inputFile: string): string {
@@ -228,120 +229,162 @@ export class PdfImageExtractor extends BaseImageExtractor {
    * @param imageFilePaths Array of image file paths
    * @returns A summary string of the generated markdown files
    */
-  protected generateMarkdown(imageFilePaths: string[]): string {
+  protected async generateMarkdown(
+    pageToImageMap: Record<number, string>,
+    newOrUpdatePages: Array<string | number>,
+  ): Promise<void> {
     // Convert imageFilePaths array to a page number to image path map
-    const pageToImageMap: Record<number, string> = {};
-
-    // Extract page numbers from file paths using regex
-    for (const imagePath of imageFilePaths) {
-      if (!imagePath) continue;
-
-      const match = path.basename(imagePath).match(/_page_(\d+)/);
-      if (match && match[1]) {
-        const pageNumber = parseInt(match[1]);
-        pageToImageMap[pageNumber] = imagePath;
-      }
-    }
 
     const generatedFiles: string[] = [];
 
     // Process all configuration sections (year, quarters, months, weeks, days)
-    const configSections = Object.values(pdfMarkdownConfig);
+    for (const sectionName of Object.keys(pdfMarkdownConfig)) {
+      const section = pdfMarkdownConfig[sectionName];
 
-    for (const section of configSections) {
-      // Each section is an array of config items
-      for (const configItem of section) {
-        // Get the title from the config
-        const { title, useTemplate = false } = configItem;
-
-        const pageNumbers = configItem.pageNumbers || [];
-
-        // Skip if no page numbers defined
-        if (!pageNumbers || pageNumbers.length === 0) {
-          continue;
-        }
-
-        // Create markdown content for this config item
-        let mdContent = `---\n`;
-        let hasValidImages = false;
-
-        // Add image links for each page number
-        for (const pageNumber of pageNumbers) {
-          // Skip if no image file path for this page
-          if (!pageToImageMap[pageNumber]) continue;
-
-          // We found at least one valid image
-          hasValidImages = true;
-
-          // Get the relative path from the markdown file to the image
-          const relativePath = path.relative(path.dirname(this.outputDir), pageToImageMap[pageNumber]);
-          mdContent += `\n`;
-          mdContent += `![Page ${pageNumber}|900](${relativePath.replace(/\\/g, '/')})\n`;
-        }
-
-        // Only proceed if at least one image exists
-        if (hasValidImages) {
-          // Create the markdown file name with the title
-          const mdFileName = `${title}.md`;
-          const mdFilePath = path.join(this.mdOutputFolder, mdFileName);
-
-          // Define start and end markers for generated content
-          const startMarker = '<!-- BEGIN SUPERNOTE PLANNER CONTENT -->';
-          const endMarker = '<!-- END SUPERNOTE PLANNER CONTENT -->';
-          const markedContent = `${startMarker}\n\n${mdContent}\n${endMarker}`;
-
-          // Check if file exists and read its content
-          let finalContent = '';
-          if (fs.existsSync(mdFilePath)) {
-            const existingContent = fs.readFileSync(mdFilePath, 'utf8');
-
-            // Find existing generated content section
-            const startIndex = existingContent.indexOf(startMarker);
-            const endIndex = existingContent.indexOf(endMarker);
-
-            if (startIndex !== -1 && endIndex !== -1) {
-              // Replace existing generated content
-              finalContent =
-                existingContent.substring(0, startIndex) +
-                markedContent +
-                existingContent.substring(endIndex + endMarker.length);
-              console.log(`Replaced generated content in: ${mdFilePath}`);
-            } else {
-              // No existing generated content, append new content
-              finalContent = existingContent + '\n' + markedContent;
-              console.log(`Added new generated content to: ${mdFilePath}`);
-            }
-          } else {
-            // Create new content with template if specified
-            if (useTemplate) {
-              const date = new Date(title);
-              const year = date.getFullYear();
-              const quarter = Math.floor(date.getMonth() / 3) + 1;
-              const weekNumber = String(
-                Math.ceil((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)),
-              ).padStart(2, '0');
-              const month = date.toLocaleString('fr-FR', { month: 'long' });
-
-              finalContent = `# ${title}  [[journal/${year}-W${weekNumber}|Week ${weekNumber}]] | [[journal/${year}-${month}|${month}]] | [[journal/${year}-Q${quarter}|Q${quarter}]] | [[journal/${year}|${year}]]\n\n---\n\n\n\n${markedContent}`;
-            } else {
-              finalContent = markedContent;
-            }
-            console.log(`Creating new file with generated content: ${mdFilePath}`);
+      if (sectionName === 'reflect') {
+        // Process all reflect items in the section (should be only one)
+        for (const configItem of section) {
+          if (!configItem || !configItem.pageNumbers || configItem.pageNumbers.length === 0) {
+            continue;
           }
 
-          // Write the final content to file
-          fs.writeFileSync(mdFilePath, finalContent);
-          generatedFiles.push(mdFilePath);
+          // Create a new PDF document for all pages
+          const reflectPdf = await PDFDocument.create();
 
-          // Add to the list of generated files
-          generatedFiles.push(mdFilePath);
-        } else {
-          console.log(`Skipping markdown file for "${title}" as no valid images were found.`);
+          // Add each page to the PDF
+          for (const pageNumber of configItem.pageNumbers) {
+            if (!pageToImageMap[pageNumber]) continue;
+
+            // Load the image
+            const imageData = await fs.readFile(pageToImageMap[pageNumber]);
+            const image = await reflectPdf.embedPng(imageData);
+
+            // Add a page with the same dimensions as the image
+            const page = reflectPdf.addPage([image.width, image.height]);
+
+            // Draw the image on the page
+            page.drawImage(image, {
+              x: 0,
+              y: 0,
+              width: image.width,
+              height: image.height,
+            });
+          }
+
+          // Save the PDF
+          const pdfFileName = `${configItem.title}.pdf`;
+          const pdfFilePath = path.join(this.mdOutputFolder, pdfFileName);
+          const pdfBytes = await reflectPdf.save();
+          await fs.writeFile(pdfFilePath, pdfBytes);
+
+          generatedFiles.push(pdfFilePath);
+        }
+      } else {
+        // Each section is an array of config items
+        for (const configItem of section) {
+          // Get the title from the config
+          const { title, useTemplate = false } = configItem;
+
+          const pageNumbers = configItem.pageNumbers || [];
+
+          // Skip if no page numbers defined
+          if (!pageNumbers || pageNumbers.length === 0) {
+            continue;
+          }
+
+          // Create markdown content for this config item
+          let mdContent = `---\n`;
+          let hasValidImages = false;
+          let shouldBeUpdated = false;
+
+          // Add image links for each page number
+          for (const pageNumber of pageNumbers) {
+            // Skip if no image file path for this page
+            if (!pageToImageMap[pageNumber]) continue;
+
+            // We found at least one valid image
+            hasValidImages = true;
+
+            if (newOrUpdatePages.includes(pageNumber)) {
+              shouldBeUpdated = true;
+            }
+
+            // Get the relative path from the markdown file to the image
+            const relativePath = path.relative(path.dirname(this.outputDir), pageToImageMap[pageNumber]);
+            mdContent += `\n`;
+            mdContent += `![Page ${pageNumber}|900](${relativePath.replace(/\\/g, '/')})\n`;
+          }
+
+          // Only proceed if at least one image exists
+          if (hasValidImages && shouldBeUpdated) {
+            // Create the markdown file name with the title
+            const mdFileName = `${title}.md`;
+            const mdFilePath = path.join(this.mdOutputFolder, mdFileName);
+
+            // Define start and end markers for generated content
+            const startMarker = '<!-- BEGIN SUPERNOTE PLANNER CONTENT -->';
+            const endMarker = '<!-- END SUPERNOTE PLANNER CONTENT -->';
+            const markedContent = `${startMarker}\n\n${mdContent}\n${endMarker}`;
+
+            // Check if file exists and read its content
+            let finalContent = '';
+            if (fs.existsSync(mdFilePath)) {
+              const existingContent = fs.readFileSync(mdFilePath, 'utf8');
+
+              // Find existing generated content section
+              const startIndex = existingContent.indexOf(startMarker);
+              const endIndex = existingContent.indexOf(endMarker);
+
+              if (startIndex !== -1 && endIndex !== -1) {
+                // Replace existing generated content
+                finalContent =
+                  existingContent.substring(0, startIndex) +
+                  markedContent +
+                  existingContent.substring(endIndex + endMarker.length);
+                console.log(`Replaced generated content in: ${mdFilePath}`);
+              } else {
+                // No existing generated content, append new content
+                finalContent = existingContent + '\n' + markedContent;
+                console.log(`Added new generated content to: ${mdFilePath}`);
+              }
+            } else {
+              // Create new content with template if specified
+              if (useTemplate) {
+                const date = new Date(title);
+                const year = date.getFullYear();
+                const quarter = Math.floor(date.getMonth() / 3) + 1;
+                const weekNumber = String(
+                  Math.ceil(
+                    (date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000),
+                  ),
+                ).padStart(2, '0');
+                const month = date.toLocaleString('fr-FR', { month: 'long' });
+
+                finalContent = `# ${title}  [[journal/${year}-W${weekNumber}|Week ${weekNumber}]] | [[journal/${year}-${month}|${month}]] | [[journal/${year}-Q${quarter}|Q${quarter}]] | [[journal/${year}|${year}]]\n\n---\n\n\n\n${markedContent}`;
+              } else {
+                finalContent = markedContent;
+              }
+              console.log(`Creating new file with generated content: ${mdFilePath}`);
+            }
+
+            // Write the final content to file
+            fs.writeFileSync(mdFilePath, finalContent);
+            generatedFiles.push(mdFilePath);
+
+            // Add to the list of generated files
+            generatedFiles.push(mdFilePath);
+          } else {
+            if (!hasValidImages) {
+              console.log(`Skipping markdown file for "${title}" as no valid images were found.`);
+            } else {
+              console.log(`Skipping markdown file for "${title}" as there is no new image to update.`);
+            }
+          }
         }
       }
     }
 
     // Return a summary string instead of the array
-    return `Generated ${generatedFiles.length} markdown files based on configuration.`;
+    console.log(`Generated ${generatedFiles.length} markdown files based on configuration.`);
   }
 }

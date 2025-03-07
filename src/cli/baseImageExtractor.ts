@@ -215,11 +215,11 @@ export abstract class BaseImageExtractor {
 
       // Generate markdown files based on configuration
       if (this.mdOutputFolder && pagesToExtract.length > 0) {
-        const markdownPageToGenerate = pagesToExtract.map((page) => pageToImageMap[page.pageNumber]);
+        const markdownPageToGenerate = pagesToExtract.map((page) => page.pageNumber);
         console.log(
           `Generating new or updates markdown file (${markdownPageToGenerate.length})  for ${this.inputFile}...`,
         );
-        this.generateMarkdown(markdownPageToGenerate);
+        await this.generateMarkdown(pageToImageMap, markdownPageToGenerate);
       }
 
       console.log('Done extracting images!');
@@ -268,5 +268,8 @@ export abstract class BaseImageExtractor {
   /**
    * Generates a markdown file with links to the extracted images
    */
-  protected abstract generateMarkdown(imageFilePaths: string[]): void;
+  protected abstract generateMarkdown(
+    imageFilePaths: Record<number, string>,
+    newOrUpdatePages: Array<string | number>,
+  ): Promise<void>;
 }
