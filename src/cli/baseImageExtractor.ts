@@ -214,9 +214,12 @@ export abstract class BaseImageExtractor {
       await this.updateCache(cache, currentPageInfo, pageToImageMap);
 
       // Generate markdown files based on configuration
-      if (this.mdOutputFolder) {
-        const imageFilePaths = Object.values(pageToImageMap);
-        this.generateMarkdown(imageFilePaths);
+      if (this.mdOutputFolder && pagesToExtract.length > 0) {
+        const markdownPageToGenerate = pagesToExtract.map((page) => pageToImageMap[page.pageNumber]);
+        console.log(
+          `Generating new or updates markdown file (${markdownPageToGenerate.length})  for ${this.inputFile}...`,
+        );
+        this.generateMarkdown(markdownPageToGenerate);
       }
 
       console.log('Done extracting images!');
