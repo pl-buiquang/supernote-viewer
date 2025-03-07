@@ -14,6 +14,7 @@ export class PdfImageExtractor extends BaseImageExtractor {
   private pdfDoc: PDFDocument;
   private markFilePath: string;
   private markModTime: number;
+  private imageScale: number = 2;
 
   /**
    * Constructor for the PDF image extractor
@@ -123,8 +124,8 @@ export class PdfImageExtractor extends BaseImageExtractor {
           const options = {
             density: 300, // output image quality DPI
             format: 'png', // output format
-            width: width, // use original width
-            height: height, // use original height
+            width: width * this.imageScale, // use original width
+            height: height * this.imageScale, // use original height
             savePath: this.outputDir, // Save directly to output directory
             saveFilename: `${this.baseName}_page_${page.pageNumber}`, // Use our naming convention
           };
