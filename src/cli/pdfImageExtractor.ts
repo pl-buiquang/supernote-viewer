@@ -281,7 +281,7 @@ export class PdfImageExtractor extends BaseImageExtractor {
           // Get the relative path from the markdown file to the image
           const relativePath = path.relative(path.dirname(this.outputDir), pageToImageMap[pageNumber]);
           mdContent += `\n\n`;
-          mdContent += `![Page ${pageNumber}](${relativePath.replace(/\\/g, '/')})\n\n`;
+          mdContent += `![Page ${pageNumber}|900](${relativePath.replace(/\\/g, '/')})\n\n`;
         }
 
         // Only proceed if at least one image exists

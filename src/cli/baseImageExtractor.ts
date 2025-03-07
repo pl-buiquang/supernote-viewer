@@ -78,6 +78,10 @@ export abstract class BaseImageExtractor {
     this.outputDir = mediaFolder ? path.resolve(mediaFolder) : process.cwd();
     fs.ensureDirSync(this.outputDir);
 
+    if (mdOutputFolder) {
+      fs.ensureDirSync(this.mdOutputFolder);
+    }
+
     // Get the base name of the input file (without extension)
     this.baseName = path.basename(inputFile, path.extname(inputFile));
 
