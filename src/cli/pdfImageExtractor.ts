@@ -262,7 +262,7 @@ export class PdfImageExtractor extends BaseImageExtractor {
         }
 
         // Create markdown content for this config item
-        let mdContent = `\n\n---\n\n`;
+        let mdContent = `---\n`;
         let hasValidImages = false;
 
         // Add image links for each page number
@@ -275,8 +275,8 @@ export class PdfImageExtractor extends BaseImageExtractor {
 
           // Get the relative path from the markdown file to the image
           const relativePath = path.relative(path.dirname(this.outputDir), pageToImageMap[pageNumber]);
-          mdContent += `\n\n`;
-          mdContent += `![Page ${pageNumber}|900](${relativePath.replace(/\\/g, '/')})\n\n`;
+          mdContent += `\n`;
+          mdContent += `![Page ${pageNumber}|900](${relativePath.replace(/\\/g, '/')})\n`;
         }
 
         // Only proceed if at least one image exists
@@ -288,7 +288,7 @@ export class PdfImageExtractor extends BaseImageExtractor {
           // Define start and end markers for generated content
           const startMarker = '<!-- BEGIN SUPERNOTE PLANNER CONTENT -->';
           const endMarker = '<!-- END SUPERNOTE PLANNER CONTENT -->';
-          const markedContent = `${startMarker}\n${mdContent}\n${endMarker}`;
+          const markedContent = `${startMarker}\n\n${mdContent}\n${endMarker}`;
 
           // Check if file exists and read its content
           let finalContent = '';
@@ -322,7 +322,7 @@ export class PdfImageExtractor extends BaseImageExtractor {
               ).padStart(2, '0');
               const month = date.toLocaleString('fr-FR', { month: 'long' });
 
-              finalContent = `# ${title}  [[journal/${year}-W${weekNumber}|Week ${weekNumber}]] | [[journal/${year}-${month}|${month}]] | [[journal/${year}-Q${quarter}|Q${quarter}]] | [[journal/${year}|${year}]]\n\n---\n\n${markedContent}`;
+              finalContent = `# ${title}  [[journal/${year}-W${weekNumber}|Week ${weekNumber}]] | [[journal/${year}-${month}|${month}]] | [[journal/${year}-Q${quarter}|Q${quarter}]] | [[journal/${year}|${year}]]\n\n---\n\n\n\n${markedContent}`;
             } else {
               finalContent = markedContent;
             }
