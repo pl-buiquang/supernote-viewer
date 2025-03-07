@@ -47,7 +47,7 @@ export class NoteImageExtractor extends BaseImageExtractor {
       if (!imageFilePath) continue;
 
       // Get the relative path from the markdown file to the image
-      const relativePath = path.relative(path.dirname(this.outputDir), imageFilePath || '');
+      const relativePath = encodeURI(path.relative(path.dirname(this.outputDir), imageFilePath));
       mdContent += `## Page ${pageNumber}\n\n`;
       mdContent += `![Page ${pageNumber}|900](${relativePath.replace(/\\/g, '/')})\n\n`;
     }

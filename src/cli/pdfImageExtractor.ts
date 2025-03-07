@@ -310,7 +310,7 @@ export class PdfImageExtractor extends BaseImageExtractor {
             }
 
             // Get the relative path from the markdown file to the image
-            const relativePath = path.relative(path.dirname(this.outputDir), pageToImageMap[pageNumber]);
+            const relativePath = encodeURI(path.relative(path.dirname(this.outputDir), pageToImageMap[pageNumber]));
             mdContent += `\n`;
             mdContent += `![Page ${pageNumber}|900](${relativePath.replace(/\\/g, '/')})\n`;
           }
@@ -373,13 +373,14 @@ export class PdfImageExtractor extends BaseImageExtractor {
 
             // Add to the list of generated files
             generatedFiles.push(mdFilePath);
-          } else {
-            if (!hasValidImages) {
-              console.log(`Skipping markdown file for "${title}" as no valid images were found.`);
-            } else {
-              console.log(`Skipping markdown file for "${title}" as there is no new image to update.`);
-            }
           }
+          //  else {
+          //   if (!hasValidImages) {
+          //     console.log(`Skipping markdown file for "${title}" as no valid images were found.`);
+          //   } else {
+          //     console.log(`Skipping markdown file for "${title}" as there is no new image to update.`);
+          //   }
+          // }
         }
       }
     }
