@@ -15,13 +15,17 @@ const generateMonthsConfig = (monthsCount: number) => {
   const monthsArray = Array.from({ length: monthsCount }, (_, i) => i + 1);
   return monthsArray.map((month) => {
     return {
-      title: new Date(YEAR, month - 1).toLocaleString('fr-FR', { month: 'long' }).toLocaleLowerCase(),
+      title: YEAR + '-' + new Date(YEAR, month - 1).toLocaleString('fr-FR', { month: 'long' }).toLocaleLowerCase(),
       pageNumbers: [month + 6],
     };
   });
 };
 
-export const pdfMarkdownConfig = {
+type PDFMarkdownConfig = {
+  [key: string]: { title: string; pageNumbers: number[]; useTemplate?: boolean }[];
+};
+
+export const pdfMarkdownConfig: PDFMarkdownConfig = {
   year: [
     {
       title: `${YEAR}`,
@@ -51,7 +55,8 @@ export const pdfMarkdownConfig = {
   days: Array.from({ length: YEAR_DAYS }, (_, i) => {
     return {
       title: new Date(YEAR, 0, i + 1).toISOString().split('T')[0],
-      pageNumber: [i + 71, i + 436],
+      pageNumbers: [i + 71, i + 436],
+      useTemplate: true,
     };
   }),
 };

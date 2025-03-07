@@ -251,15 +251,9 @@ export class PdfImageExtractor extends BaseImageExtractor {
       // Each section is an array of config items
       for (const configItem of section) {
         // Get the title from the config
-        const { title } = configItem;
+        const { title, useTemplate = false } = configItem;
 
-        // Handle both pageNumbers and pageNumber properties
-        const pageNumbers =
-          'pageNumbers' in configItem
-            ? configItem.pageNumbers
-            : 'pageNumber' in configItem
-              ? configItem.pageNumber
-              : [];
+        const pageNumbers = configItem.pageNumbers || [];
 
         // Skip if no page numbers defined
         if (!pageNumbers || pageNumbers.length === 0) {
@@ -306,6 +300,15 @@ export class PdfImageExtractor extends BaseImageExtractor {
             fs.appendFileSync(mdFilePath, mdContent);
             console.log(`Appended content to existing file: ${mdFilePath}`);
           } else {
+            if (useTemplate) {
+              const date = new Date(title);
+              const year = date.getFullYear();
+              const quarter = Math.floor(date.getMonth() / 3) + 1;
+              const weekNumber = String(Math.ceil(date.getDate() / 7)).padStart(2, '0');
+              const month = date.toLocaleString('fr-FR', { month: 'long' });
+
+              mdContent = `# ${title}  [[journal/${year}-W${weekNumber}|Week ${weekNumber}]] | [[journal/${year}-${month}|${month}]] | [[journal/${year}-Q${quarter}|Q${quarter}]] | [[journal/${year}|${year}]]\n\n---\n\n${mdContent}`;
+            }
             // Create new file with content
             fs.writeFileSync(mdFilePath, mdContent);
             console.log(`Generated new markdown file: ${mdFilePath}`);
