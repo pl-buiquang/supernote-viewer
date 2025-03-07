@@ -285,35 +285,53 @@ export class PdfImageExtractor extends BaseImageExtractor {
           const mdFileName = `${title}.md`;
           const mdFilePath = path.join(this.mdOutputFolder, mdFileName);
 
+          // Define start and end markers for generated content
+          const startMarker = '<!-- BEGIN SUPERNOTE PLANNER CONTENT -->';
+          const endMarker = '<!-- END SUPERNOTE PLANNER CONTENT -->';
+          const markedContent = `${startMarker}\n${mdContent}\n${endMarker}`;
+
           // Check if file exists and read its content
-          let existingContent = '';
+          let finalContent = '';
           if (fs.existsSync(mdFilePath)) {
-            existingContent = fs.readFileSync(mdFilePath, 'utf8');
+            const existingContent = fs.readFileSync(mdFilePath, 'utf8');
 
-            // Check if the content we want to add already exists
-            if (existingContent.includes(mdContent)) {
-              console.log(`Content already exists in ${mdFilePath}, skipping.`);
-              generatedFiles.push(mdFilePath);
-              continue;
+            // Find existing generated content section
+            const startIndex = existingContent.indexOf(startMarker);
+            const endIndex = existingContent.indexOf(endMarker);
+
+            if (startIndex !== -1 && endIndex !== -1) {
+              // Replace existing generated content
+              finalContent =
+                existingContent.substring(0, startIndex) +
+                markedContent +
+                existingContent.substring(endIndex + endMarker.length);
+              console.log(`Replaced generated content in: ${mdFilePath}`);
+            } else {
+              // No existing generated content, append new content
+              finalContent = existingContent + '\n' + markedContent;
+              console.log(`Added new generated content to: ${mdFilePath}`);
             }
-
-            // If content doesn't exist, append it to the file
-            fs.appendFileSync(mdFilePath, mdContent);
-            console.log(`Appended content to existing file: ${mdFilePath}`);
           } else {
+            // Create new content with template if specified
             if (useTemplate) {
               const date = new Date(title);
               const year = date.getFullYear();
               const quarter = Math.floor(date.getMonth() / 3) + 1;
-              const weekNumber = String(Math.ceil(date.getDate() / 7)).padStart(2, '0');
+              const weekNumber = String(
+                Math.ceil((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)),
+              ).padStart(2, '0');
               const month = date.toLocaleString('fr-FR', { month: 'long' });
 
-              mdContent = `# ${title}  [[journal/${year}-W${weekNumber}|Week ${weekNumber}]] | [[journal/${year}-${month}|${month}]] | [[journal/${year}-Q${quarter}|Q${quarter}]] | [[journal/${year}|${year}]]\n\n---\n\n${mdContent}`;
+              finalContent = `# ${title}  [[journal/${year}-W${weekNumber}|Week ${weekNumber}]] | [[journal/${year}-${month}|${month}]] | [[journal/${year}-Q${quarter}|Q${quarter}]] | [[journal/${year}|${year}]]\n\n---\n\n${markedContent}`;
+            } else {
+              finalContent = markedContent;
             }
-            // Create new file with content
-            fs.writeFileSync(mdFilePath, mdContent);
-            console.log(`Generated new markdown file: ${mdFilePath}`);
+            console.log(`Creating new file with generated content: ${mdFilePath}`);
           }
+
+          // Write the final content to file
+          fs.writeFileSync(mdFilePath, finalContent);
+          generatedFiles.push(mdFilePath);
 
           // Add to the list of generated files
           generatedFiles.push(mdFilePath);
